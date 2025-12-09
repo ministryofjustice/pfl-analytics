@@ -1,9 +1,41 @@
 import pandas as pd
 import re
+import os
 
+# Define directories
+input_dir = "input"
+output_dir = "output"
 
-input_file = input("Enter the name of the input file (e.g., report.xlsx or report.csv): ").strip()
-output_file = "Data_Aggregation_Output.xlsx"
+# Ensure directories exist
+os.makedirs(input_dir, exist_ok=True)
+os.makedirs(output_dir, exist_ok=True)
+
+# List available files in input directory
+available_files = [f for f in os.listdir(input_dir) if f.endswith(('.xlsx', '.csv')) and not f.startswith('~$')]
+
+if not available_files:
+    print(f"No Excel or CSV files found in the '{input_dir}/' directory.")
+    print(f"Please add your data files to the '{input_dir}/' directory and run the script again.")
+    exit(1)
+
+print("Available files in input directory:")
+for idx, filename in enumerate(available_files, 1):
+    print(f"{idx}. {filename}")
+
+while True:
+    selection = input("\nEnter the number of the file you want to process: ").strip()
+    try:
+        file_index = int(selection) - 1
+        if 0 <= file_index < len(available_files):
+            input_filename = available_files[file_index]
+            break
+        else:
+            print(f"Please enter a number between 1 and {len(available_files)}")
+    except ValueError:
+        print("Please enter a valid number")
+
+input_file = os.path.join(input_dir, input_filename)
+output_file = os.path.join(output_dir, "Data_Aggregation_Output.xlsx")
 
 
 # Read the file

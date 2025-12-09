@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+
+# Input data files
+input/
+
+# Output data files
+output/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+
+# Excel temporary files
+~$*.xlsx
+~$*.xls
