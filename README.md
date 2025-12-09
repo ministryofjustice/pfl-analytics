@@ -3,13 +3,22 @@ POC for analytics dashboard for CAP
 
 ## Setup
 
-### 1. Create Virtual Environment
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd care-arrangement-plan-analytics
+```
+
+The `input/` and `output/` directories will be created automatically with `.gitkeep` files to maintain the folder structure.
+
+### 2. Create Virtual Environment
 
 ```bash
 python3 -m venv venv
 ```
 
-### 2. Activate Virtual Environment
+### 3. Activate Virtual Environment
 
 On macOS/Linux:
 ```bash
@@ -21,7 +30,7 @@ On Windows:
 venv\Scripts\activate
 ```
 
-### 3. Install Requirements
+### 4. Install Requirements
 
 ```bash
 pip install -r requirements.txt

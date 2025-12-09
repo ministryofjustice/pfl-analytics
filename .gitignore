@@ -1,11 +1,14 @@
 # Virtual environment
 venv/
 
-# Input data files
-input/
+# Input data files (but keep directory structure)
+input/*
+!input/.gitkeep
+!input/README.md
 
-# Output data files
-output/
+# Output data files (but keep directory structure)
+output/*
+!output/.gitkeep
 
 # Python cache
 __pycache__/
