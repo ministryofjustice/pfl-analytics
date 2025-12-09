@@ -129,8 +129,29 @@ if not page_visits.empty and 'timestamp' in page_visits.columns:
     # Group by week and path, count occurrences
     weekly_summary = page_visits.groupby(['week', 'path']).size().reset_index(name='count')
 
-    # Convert week to string for Excel compatibility
-    weekly_summary['week'] = weekly_summary['week'].astype(str)
+    # Sort by week and count (descending within each week)
+    weekly_summary = weekly_summary.sort_values(['week', 'count'], ascending=[True, False])
+
+    # Add a blank row between weeks for readability
+    formatted_weekly_summary = []
+    current_week = None
+
+    for idx, row in weekly_summary.iterrows():
+        week_str = str(row['week'])
+
+        # Add blank row between weeks (except for the first week)
+        if current_week is not None and current_week != week_str:
+            formatted_weekly_summary.append({'week': '', 'path': '', 'count': ''})
+
+        formatted_weekly_summary.append({
+            'week': week_str,
+            'path': row['path'],
+            'count': row['count']
+        })
+
+        current_week = week_str
+
+    weekly_summary = pd.DataFrame(formatted_weekly_summary)
 
     print(f"\nWeekly page visit summary created with {len(weekly_summary)} rows")
 else:
