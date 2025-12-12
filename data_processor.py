@@ -142,6 +142,100 @@ def calculate_completion_rate(page_visits):
     return final_completion
 
 
+def calculate_per_page_completion_rate(page_visits):
+    """Calculate completion rates for each page in the journey."""
+    if page_visits.empty or 'timestamp' not in page_visits.columns:
+        return pd.DataFrame()
+
+    # Define the page order
+    page_order = [
+        '/',
+        '/safety-check',
+        '/children-safety-check',
+        '/do-whats-best',
+        '/court-order-check',
+        '/number-of-children',
+        '/about-the-children',
+        '/about-the-adults',
+        '/make-a-plan',
+        '/check-your-answers',
+        '/share-plan',
+        '/confirmation'
+    ]
+
+    # Calculate weekly stats per page
+    results = []
+
+    for week in sorted(page_visits['week'].unique()):
+        week_data = page_visits[page_visits['week'] == week]
+
+        for page in page_order:
+            page_data = week_data[week_data['path'] == page]
+
+            results.append({
+                'week': week,
+                'page': page,
+                'total_visits': len(page_data),
+                'unique_users': page_data['user_id'].nunique() if not page_data.empty else 0
+            })
+
+    per_page_df = pd.DataFrame(results)
+    per_page_df['week'] = per_page_df['week'].astype(str)
+
+    return per_page_df
+
+
+def calculate_funnel_data(page_visits):
+    """Calculate funnel data across all pages in the journey."""
+    if page_visits.empty:
+        return pd.DataFrame()
+
+    # Define the page order
+    page_order = [
+        '/',
+        '/safety-check',
+        '/children-safety-check',
+        '/do-whats-best',
+        '/court-order-check',
+        '/number-of-children',
+        '/about-the-children',
+        '/about-the-adults',
+        '/make-a-plan',
+        '/check-your-answers',
+        '/share-plan',
+        '/confirmation'
+    ]
+
+    # Page display names
+    page_names = {
+        '/': 'Home',
+        '/safety-check': 'Safety Check',
+        '/children-safety-check': 'Children Safety Check',
+        '/do-whats-best': 'Do What\'s Best',
+        '/court-order-check': 'Court Order Check',
+        '/number-of-children': 'Number of Children',
+        '/about-the-children': 'About the Children',
+        '/about-the-adults': 'About the Adults',
+        '/make-a-plan': 'Make a Plan',
+        '/check-your-answers': 'Check Your Answers',
+        '/share-plan': 'Share Plan',
+        '/confirmation': 'Confirmation'
+    }
+
+    funnel_data = []
+
+    for page in page_order:
+        page_data = page_visits[page_visits['path'] == page]
+        funnel_data.append({
+            'page': page,
+            'page_name': page_names.get(page, page),
+            'total_visits': len(page_data),
+            'unique_users': page_data['user_id'].nunique() if not page_data.empty else 0
+        })
+
+    return pd.DataFrame(funnel_data)
+
+
 def process_log_file(file_path):
     """Main function to process a log file and return all analytics."""
     # Read the file
@@ -159,9 +253,17 @@ def process_log_file(file_path):
     # Calculate completion rate
     final_completion = calculate_completion_rate(page_visits)
 
+    # Calculate per-page completion rates
+    per_page_completion = calculate_per_page_completion_rate(page_visits)
+
+    # Calculate funnel data
+    funnel_data = calculate_funnel_data(page_visits)
+
     return {
         'parsed_data': df,
         'weekly_summary': weekly_summary,
         'completion_rate': final_completion,
-        'page_visits': page_visits
+        'page_visits': page_visits,
+        'per_page_completion': per_page_completion,
+        'funnel_data': funnel_data
     }
