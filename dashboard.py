@@ -107,8 +107,9 @@ with col2:
 
 with col3:
     if not page_visits.empty:
-        total_visits = len(page_visits)
-        st.metric("Total Page Visits", f"{total_visits:,}")
+        # Count unique user-page combinations to avoid counting multiple visits to same page by same user
+        unique_visits = page_visits.drop_duplicates(subset=['user_id', 'path']).shape[0]
+        st.metric("Total Page Visits", f"{unique_visits:,}")
     else:
         st.metric("Total Page Visits", "0")
 

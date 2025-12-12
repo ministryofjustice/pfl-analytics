@@ -163,11 +163,14 @@ def calculate_per_page_completion_rate(page_visits):
         '/confirmation'
     ]
 
-    # Calculate weekly stats per page
+    # Deduplicate page visits globally - keep only first visit per user-page combination
+    deduplicated_visits = page_visits.sort_values('timestamp').drop_duplicates(subset=['user_id', 'path'], keep='first')
+
+    # Calculate weekly stats per page using deduplicated data
     results = []
 
-    for week in sorted(page_visits['week'].unique()):
-        week_data = page_visits[page_visits['week'] == week]
+    for week in sorted(deduplicated_visits['week'].unique()):
+        week_data = deduplicated_visits[deduplicated_visits['week'] == week]
 
         for page in page_order:
             page_data = week_data[week_data['path'] == page]
@@ -222,10 +225,14 @@ def calculate_funnel_data(page_visits):
         '/confirmation': 'Confirmation'
     }
 
+    # Deduplicate page visits globally - keep only first visit per user-page combination
+    deduplicated_visits = page_visits.sort_values('timestamp').drop_duplicates(subset=['user_id', 'path'], keep='first')
+
     funnel_data = []
 
     for page in page_order:
-        page_data = page_visits[page_visits['path'] == page]
+        page_data = deduplicated_visits[deduplicated_visits['path'] == page]
+
         funnel_data.append({
             'page': page,
             'page_name': page_names.get(page, page),
