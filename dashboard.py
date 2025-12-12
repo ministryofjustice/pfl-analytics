@@ -94,6 +94,8 @@ funnel_data = data['funnel_data']
 
 # Metrics row
 st.header("📈 Key Metrics")
+
+# First row - general metrics
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -116,6 +118,25 @@ with col4:
         st.metric("Avg Completion Rate", f"{avg_completion:.1f}%")
     else:
         st.metric("Avg Completion Rate", "N/A")
+
+# Second row - event type metrics
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    link_clicks_count = len(df[df['event_type'] == 'link_click'])
+    st.metric("Total Link Clicks", f"{link_clicks_count:,}")
+
+with col2:
+    page_exits_count = len(df[df['event_type'] == 'page_exit'])
+    st.metric("Total Page Exits", f"{page_exits_count:,}")
+
+with col3:
+    quick_exits_count = len(df[df['event_type'] == 'quick_exit'])
+    st.metric("Total Quick Exits", f"{quick_exits_count:,}")
+
+with col4:
+    downloads_count = len(df[df['event_type'] == 'download'])
+    st.metric("Total Downloads", f"{downloads_count:,}")
 
 st.divider()
 

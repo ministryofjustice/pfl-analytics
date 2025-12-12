@@ -11,7 +11,7 @@ def parse_log_data(df_raw):
 
     # Parse the log entries into separate columns
     parsed_rows = []
-    excluded_patterns = ['/assets', '/images', '/js', '/fonts', '/css']
+    excluded_patterns = ['/assets', '/images', '/js', '/fonts', '/css', '/.git', '/.env', '/.well-known']
 
     for idx, row in df_raw.iterrows():
         log_entry = str(row.iloc[0])
