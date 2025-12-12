@@ -15,7 +15,6 @@ care-arrangement-plan-analytics/
 ├── main.py                         # CLI batch processing script
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
-├── REFACTORING_SUMMARY.md          # Detailed refactoring notes
 │
 ├── input/                          # 📁 Place your data files here
 │   └── .gitkeep
