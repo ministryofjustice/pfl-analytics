@@ -217,7 +217,16 @@ st.sidebar.download_button(
 )
 
 # Tabs for different views
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Weekly Overview", "🔍 Page Visits", "✅ Completion Rates", "📋 Raw Data"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    "📊 Weekly Overview",
+    "🔍 Page Visits",
+    "✅ Completion Rates",
+    "🔗 Link Clicks",
+    "🚪 Page Exits",
+    "⚡ Quick Exits",
+    "📥 Downloads",
+    "📋 Raw Data"
+])
 
 with tab1:
     st.header("Weekly Overview")
@@ -457,6 +466,305 @@ with tab3:
         st.info("No completion rate data available")
 
 with tab4:
+    st.header("Link Clicks Analysis")
+
+    # Filter for LINK_CLICK events
+    link_clicks = df[df['event_type'] == 'LINK_CLICK'].copy()
+
+    if not link_clicks.empty:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total Link Clicks", f"{len(link_clicks):,}")
+
+        with col2:
+            unique_users_clicks = link_clicks['user_id'].nunique()
+            st.metric("Unique Users", f"{unique_users_clicks:,}")
+
+        with col3:
+            avg_clicks = len(link_clicks) / unique_users_clicks if unique_users_clicks > 0 else 0
+            st.metric("Avg Clicks per User", f"{avg_clicks:.1f}")
+
+        st.divider()
+
+        # Link clicks over time
+        if 'timestamp' in link_clicks.columns:
+            link_clicks['timestamp'] = pd.to_datetime(link_clicks['timestamp'])
+            link_clicks['date'] = link_clicks['timestamp'].dt.date
+
+            clicks_by_date = link_clicks.groupby('date').size().reset_index(name='count')
+
+            fig_clicks_timeline = px.line(
+                clicks_by_date,
+                x='date',
+                y='count',
+                title='Link Clicks Over Time',
+                labels={'date': 'Date', 'count': 'Number of Clicks'},
+                markers=True
+            )
+            fig_clicks_timeline.update_layout(height=400)
+            st.plotly_chart(fig_clicks_timeline, use_container_width=True)
+
+        # Most clicked links by path
+        if 'path' in link_clicks.columns:
+            st.subheader("Link Clicks by Page")
+            clicks_by_path = link_clicks['path'].value_counts().head(10)
+
+            fig_clicks_path = px.bar(
+                x=clicks_by_path.values,
+                y=clicks_by_path.index,
+                orientation='h',
+                title='Top 10 Pages with Link Clicks',
+                labels={'x': 'Number of Clicks', 'y': 'Page Path'},
+                color=clicks_by_path.values,
+                color_continuous_scale='Blues'
+            )
+            fig_clicks_path.update_layout(height=400, showlegend=False)
+            st.plotly_chart(fig_clicks_path, use_container_width=True)
+    else:
+        st.info("No link click data available")
+
+with tab5:
+    st.header("Page Exits Analysis")
+
+    # Filter for PAGE_EXIT events
+    page_exits = df[df['event_type'] == 'PAGE_EXIT'].copy()
+
+    if not page_exits.empty:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total Page Exits", f"{len(page_exits):,}")
+
+        with col2:
+            unique_users_exits = page_exits['user_id'].nunique()
+            st.metric("Unique Users", f"{unique_users_exits:,}")
+
+        with col3:
+            avg_exits = len(page_exits) / unique_users_exits if unique_users_exits > 0 else 0
+            st.metric("Avg Exits per User", f"{avg_exits:.1f}")
+
+        st.divider()
+
+        # Page exits over time
+        if 'timestamp' in page_exits.columns:
+            page_exits['timestamp'] = pd.to_datetime(page_exits['timestamp'])
+            page_exits['date'] = page_exits['timestamp'].dt.date
+
+            exits_by_date = page_exits.groupby('date').size().reset_index(name='count')
+
+            fig_exits_timeline = px.line(
+                exits_by_date,
+                x='date',
+                y='count',
+                title='Page Exits Over Time',
+                labels={'date': 'Date', 'count': 'Number of Exits'},
+                markers=True
+            )
+            fig_exits_timeline.update_layout(height=400)
+            st.plotly_chart(fig_exits_timeline, use_container_width=True)
+
+        # Most common exit pages
+        if 'path' in page_exits.columns:
+            st.subheader("Exit Pages")
+            exits_by_path = page_exits['path'].value_counts().head(10)
+
+            fig_exits_path = px.bar(
+                x=exits_by_path.values,
+                y=exits_by_path.index,
+                orientation='h',
+                title='Top 10 Exit Pages',
+                labels={'x': 'Number of Exits', 'y': 'Page Path'},
+                color=exits_by_path.values,
+                color_continuous_scale='Reds'
+            )
+            fig_exits_path.update_layout(height=400, showlegend=False)
+            st.plotly_chart(fig_exits_path, use_container_width=True)
+    else:
+        st.info("No page exit data available")
+
+with tab6:
+    st.header("Quick Exits Analysis")
+
+    # Filter for QUICK_EXIT events
+    quick_exits = df[df['event_type'] == 'QUICK_EXIT'].copy()
+
+    if not quick_exits.empty:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total Quick Exits", f"{len(quick_exits):,}")
+
+        with col2:
+            unique_users_quick = quick_exits['user_id'].nunique()
+            st.metric("Unique Users", f"{unique_users_quick:,}")
+
+        with col3:
+            avg_quick = len(quick_exits) / unique_users_quick if unique_users_quick > 0 else 0
+            st.metric("Avg Quick Exits per User", f"{avg_quick:.1f}")
+
+        st.divider()
+
+        # Quick exits over time
+        if 'timestamp' in quick_exits.columns:
+            quick_exits['timestamp'] = pd.to_datetime(quick_exits['timestamp'])
+            quick_exits['date'] = quick_exits['timestamp'].dt.date
+
+            quick_by_date = quick_exits.groupby('date').size().reset_index(name='count')
+
+            fig_quick_timeline = px.line(
+                quick_by_date,
+                x='date',
+                y='count',
+                title='Quick Exits Over Time',
+                labels={'date': 'Date', 'count': 'Number of Quick Exits'},
+                markers=True
+            )
+            fig_quick_timeline.update_layout(height=400)
+            st.plotly_chart(fig_quick_timeline, use_container_width=True)
+
+        # Most common quick exit pages
+        if 'path' in quick_exits.columns:
+            st.subheader("Quick Exit Pages")
+            st.write("Pages where users quickly exit (indicating potential issues or confusion)")
+
+            quick_by_path = quick_exits['path'].value_counts().head(10)
+
+            fig_quick_path = px.bar(
+                x=quick_by_path.values,
+                y=quick_by_path.index,
+                orientation='h',
+                title='Top 10 Quick Exit Pages',
+                labels={'x': 'Number of Quick Exits', 'y': 'Page Path'},
+                color=quick_by_path.values,
+                color_continuous_scale='Oranges'
+            )
+            fig_quick_path.update_layout(height=400, showlegend=False)
+            st.plotly_chart(fig_quick_path, use_container_width=True)
+    else:
+        st.info("No quick exit data available")
+
+with tab7:
+    st.header("Downloads Analysis")
+
+    # Filter for DOWNLOAD events
+    downloads = df[df['event_type'] == 'DOWNLOAD'].copy()
+
+    if not downloads.empty:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total Downloads", f"{len(downloads):,}")
+
+        with col2:
+            unique_users_downloads = downloads['user_id'].nunique()
+            st.metric("Unique Users", f"{unique_users_downloads:,}")
+
+        with col3:
+            avg_downloads = len(downloads) / unique_users_downloads if unique_users_downloads > 0 else 0
+            st.metric("Avg Downloads per User", f"{avg_downloads:.1f}")
+
+        st.divider()
+
+        # Downloads by type
+        if 'download_type' in downloads.columns:
+            st.subheader("Downloads by Type")
+
+            download_types = downloads['download_type'].value_counts().reset_index()
+            download_types.columns = ['Download Type', 'Count']
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                fig_download_pie = px.pie(
+                    download_types,
+                    values='Count',
+                    names='Download Type',
+                    title='Distribution of Download Types'
+                )
+                st.plotly_chart(fig_download_pie, use_container_width=True)
+
+            with col2:
+                fig_download_bar = px.bar(
+                    download_types,
+                    x='Download Type',
+                    y='Count',
+                    title='Download Count by Type',
+                    color='Count',
+                    color_continuous_scale='Greens'
+                )
+                st.plotly_chart(fig_download_bar, use_container_width=True)
+
+            # Detailed metrics for each download type
+            st.subheader("Metrics by Download Type")
+
+            download_type_metrics = []
+            for dtype in downloads['download_type'].unique():
+                dtype_data = downloads[downloads['download_type'] == dtype]
+                download_type_metrics.append({
+                    'Download Type': dtype,
+                    'Total Downloads': len(dtype_data),
+                    'Unique Users': dtype_data['user_id'].nunique(),
+                    'Avg per User': f"{len(dtype_data) / dtype_data['user_id'].nunique():.2f}" if dtype_data['user_id'].nunique() > 0 else "0.00"
+                })
+
+            metrics_df = pd.DataFrame(download_type_metrics)
+            st.dataframe(metrics_df, use_container_width=True)
+
+            # Downloads over time
+            if 'timestamp' in downloads.columns:
+                st.subheader("Downloads Over Time")
+
+                downloads['timestamp'] = pd.to_datetime(downloads['timestamp'])
+                downloads['date'] = downloads['timestamp'].dt.date
+
+                downloads_by_date_type = downloads.groupby(['date', 'download_type']).size().reset_index(name='count')
+
+                fig_downloads_timeline = px.line(
+                    downloads_by_date_type,
+                    x='date',
+                    y='count',
+                    color='download_type',
+                    title='Downloads Over Time by Type',
+                    labels={'date': 'Date', 'count': 'Number of Downloads', 'download_type': 'Download Type'},
+                    markers=True
+                )
+                fig_downloads_timeline.update_layout(height=400)
+                st.plotly_chart(fig_downloads_timeline, use_container_width=True)
+
+            # Specific metrics for each type
+            st.subheader("Download Type Details")
+
+            for dtype in ['output_pdf', 'offline_pdf', 'output_html']:
+                dtype_data = downloads[downloads['download_type'] == dtype]
+
+                if not dtype_data.empty:
+                    with st.expander(f"📄 {dtype.replace('_', ' ').title()} ({len(dtype_data)} downloads)"):
+                        col1, col2, col3 = st.columns(3)
+
+                        with col1:
+                            st.metric("Total Downloads", f"{len(dtype_data):,}")
+
+                        with col2:
+                            unique_users_type = dtype_data['user_id'].nunique()
+                            st.metric("Unique Users", f"{unique_users_type:,}")
+
+                        with col3:
+                            avg_type = len(dtype_data) / unique_users_type if unique_users_type > 0 else 0
+                            st.metric("Avg per User", f"{avg_type:.2f}")
+
+                        # Downloads by page
+                        if 'path' in dtype_data.columns:
+                            type_by_path = dtype_data['path'].value_counts().head(5)
+                            if not type_by_path.empty:
+                                st.write(f"**Top pages for {dtype}:**")
+                                st.dataframe(type_by_path.reset_index().rename(columns={'index': 'Page', 'path': 'Downloads'}), use_container_width=True)
+        else:
+            st.warning("No download_type field found in the data")
+    else:
+        st.info("No download data available")
+
+with tab8:
     st.header("Raw Data")
 
     # Data selector
