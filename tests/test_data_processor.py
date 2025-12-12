@@ -1,7 +1,13 @@
 import unittest
 import pandas as pd
 from datetime import datetime, timedelta
-from data_processor import (
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import modules
+sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+
+from data_processing import (
     calculate_per_page_completion_rate,
     calculate_funnel_data,
     parse_log_data
