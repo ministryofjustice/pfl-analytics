@@ -85,20 +85,27 @@ def calculate_per_page_completion_rate(page_visits):
     # Deduplicate page visits globally - keep only first visit per user-page combination
     deduplicated_visits = page_visits.sort_values('timestamp').drop_duplicates(subset=['user_id', 'path'], keep='first')
 
-    # Calculate weekly stats per page using deduplicated data
+    # Calculate weekly stats per page
     results = []
 
-    for week in sorted(deduplicated_visits['week'].unique()):
-        week_data = deduplicated_visits[deduplicated_visits['week'] == week]
+    # Get all weeks from both original and deduplicated data
+    all_weeks = sorted(page_visits['week'].unique())
+
+    for week in all_weeks:
+        # Use original data for total visits count
+        week_data_raw = page_visits[page_visits['week'] == week]
+        # Use deduplicated data for unique users count
+        week_data_dedup = deduplicated_visits[deduplicated_visits['week'] == week]
 
         for page in PAGE_ORDER:
-            page_data = week_data[week_data['path'] == page]
+            page_data_raw = week_data_raw[week_data_raw['path'] == page]
+            page_data_dedup = week_data_dedup[week_data_dedup['path'] == page]
 
             results.append({
                 'week': week,
                 'page': page,
-                'total_visits': len(page_data),
-                'unique_users': page_data['user_id'].nunique() if not page_data.empty else 0
+                'total_visits': len(page_data_raw),  # Count from original data
+                'unique_users': page_data_dedup['user_id'].nunique() if not page_data_dedup.empty else 0  # Count from deduplicated data
             })
 
     per_page_df = pd.DataFrame(results)

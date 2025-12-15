@@ -107,10 +107,20 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
     # Download all data as Excel
     st.sidebar.subheader("Excel Download (All Data)")
 
+    # Filter event types
+    link_clicks = df[df['event_type'] == 'link_click'].copy() if 'event_type' in df.columns else pd.DataFrame()
+    page_exits = df[df['event_type'] == 'page_exit'].copy() if 'event_type' in df.columns else pd.DataFrame()
+    quick_exits = df[df['event_type'] == 'quick_exit'].copy() if 'event_type' in df.columns else pd.DataFrame()
+    downloads = df[df['event_type'] == 'download'].copy() if 'event_type' in df.columns else pd.DataFrame()
+
     # Prepare all dataframes
     all_data = {
         'Parsed Data': df,
         'Page Visits': page_visits if not page_visits.empty else pd.DataFrame(),
+        'Link Clicks': link_clicks if not link_clicks.empty else pd.DataFrame(),
+        'Page Exits': page_exits if not page_exits.empty else pd.DataFrame(),
+        'Quick Exits': quick_exits if not quick_exits.empty else pd.DataFrame(),
+        'Downloads': downloads if not downloads.empty else pd.DataFrame(),
         'Weekly Summary': weekly_summary if not weekly_summary.empty else pd.DataFrame(),
         'Completion Rate': completion_rate if not completion_rate.empty else pd.DataFrame(),
         'Per Page Completion': per_page_completion if not per_page_completion.empty else pd.DataFrame(),
@@ -126,5 +136,5 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
         file_name=f"cap_analytics_all_data_{selected_file.split('.')[0]}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
-        help="Downloads all data (Parsed Data, Page Visits, Weekly Summary, and Completion Rates) in a single Excel file with multiple sheets"
+        help="Downloads all data including event types (Link Clicks, Page Exits, Quick Exits, Downloads) in a single Excel file with multiple sheets"
     )

@@ -18,9 +18,16 @@ def display_key_metrics(df, page_visits, completion_rate):
 
     with col3:
         if not page_visits.empty:
-            # Count unique user-page combinations to avoid counting multiple visits to same page by same user
+            # Count total page visits (before deduplication)
+            total_visits = len(page_visits)
+            # Count unique user-page combinations (after deduplication)
             unique_visits = page_visits.drop_duplicates(subset=['user_id', 'path']).shape[0]
-            st.metric("Total Page Visits", f"{unique_visits:,}")
+            st.metric(
+                "Total Page Visits",
+                f"{total_visits:,}",
+                delta=f"{unique_visits:,} unique",
+                help="Total page visit events (delta shows unique user-page combinations after deduplication)"
+            )
         else:
             st.metric("Total Page Visits", "0")
 
