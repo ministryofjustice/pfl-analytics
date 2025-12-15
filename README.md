@@ -8,10 +8,9 @@ A Streamlit-based analytics dashboard for analyzing Care Arrangement Plan user b
 
 ```
 care-arrangement-plan-analytics/
-├── app.py                          # ⭐ NEW: Main application entry point
-├── dashboard.py                    # Legacy dashboard (still works)
-├── dashboard_tabs.py               # Bridge file for tabs (temporary)
-├── data_processor.py               # Legacy data processor
+├── app.py                          # ⭐ Main application entry point
+├── dashboard.py                    # Legacy dashboard (deprecated)
+├── data_processor.py               # Legacy data processor (deprecated)
 ├── main.py                         # CLI batch processing script
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
@@ -26,13 +25,16 @@ care-arrangement-plan-analytics/
 │   ├── __init__.py
 │   └── test_data_processor.py      # Data processing tests
 │
-└── src/                            # ⭐ NEW: Modular source code
+└── src/                            # Modular source code
     ├── __init__.py
     │
     ├── components/                 # 🎨 UI Components
     │   ├── __init__.py
     │   ├── metrics_display.py      # Key metrics visualization
-    │   └── sidebar.py              # File selector, filters, downloads
+    │   ├── sidebar.py              # File selector, filters, downloads
+    │   └── tabs/                   # Dashboard tabs
+    │       ├── __init__.py
+    │       └── all_tabs.py         # All dashboard tab components
     │
     ├── data_processing/            # 📊 Data Processing Logic
     │   ├── __init__.py
@@ -49,9 +51,9 @@ care-arrangement-plan-analytics/
 ### Key Files Explained
 
 #### Entry Points
-- **`app.py`** ⭐ - New modular dashboard (recommended)
-- **`dashboard.py`** - Original monolithic dashboard (still functional)
+- **`app.py`** ⭐ - Main dashboard application (modular, fully functional)
 - **`main.py`** - CLI script for batch processing
+- **`dashboard.py`** - Legacy dashboard (deprecated, use app.py instead)
 
 #### Data Processing (`src/data_processing/`)
 - **`parser.py`** - Parses raw log entries, filters out assets and anonymous users
@@ -64,6 +66,7 @@ care-arrangement-plan-analytics/
 #### UI Components (`src/components/`)
 - **`metrics_display.py`** - Renders key metrics cards
 - **`sidebar.py`** - File selection, date filters, download buttons
+- **`tabs/all_tabs.py`** - All dashboard tab components (Weekly Overview, Page Visits, Completion Rates, Link Clicks, Page Exits, Quick Exits, Downloads, Raw Data)
 
 #### Tests (`tests/`)
 - **`test_data_processor.py`** - Unit tests for deduplication and metrics
@@ -107,24 +110,19 @@ pip install -r requirements.txt
 
 ### Running the Dashboard
 
-**Full Dashboard (Recommended):**
-```bash
-streamlit run dashboard.py
-```
-
-**New Modular Structure (Partial - Metrics Only):**
 ```bash
 streamlit run app.py
 ```
-_Note: app.py demonstrates the new modular code structure but only shows key metrics. Full dashboard functionality is in dashboard.py_
+
+Your browser will open automatically at http://localhost:8501
 
 ### Using the Dashboard
 
 1. Place your raw log files (`.xlsx` or `.csv`) in the `input/` directory
-2. Launch the dashboard using one of the commands above
-3. Your browser will open automatically (usually at http://localhost:8501)
+2. Launch the dashboard with `streamlit run app.py`
+3. Your browser will open automatically at http://localhost:8501
 4. Select a file from the sidebar dropdown and click "Load Data"
-5. Explore the interactive visualizations and analytics
+5. Explore the interactive visualizations and analytics across all tabs
 
 **Dashboard Features:**
 - 📊 Weekly overview with interactive charts
