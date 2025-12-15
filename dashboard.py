@@ -490,8 +490,8 @@ with tab3:
 with tab4:
     st.header("Link Clicks Analysis")
 
-    # Filter for LINK_CLICK events
-    link_clicks = df[df['event_type'] == 'LINK_CLICK'].copy()
+    # Filter for link_click events
+    link_clicks = df[df['event_type'] == 'link_click'].copy()
 
     if not link_clicks.empty:
         col1, col2, col3 = st.columns(3)
@@ -549,8 +549,8 @@ with tab4:
 with tab5:
     st.header("Page Exits Analysis")
 
-    # Filter for PAGE_EXIT events
-    page_exits = df[df['event_type'] == 'PAGE_EXIT'].copy()
+    # Filter for page_exit events
+    page_exits = df[df['event_type'] == 'page_exit'].copy()
 
     if not page_exits.empty:
         col1, col2, col3 = st.columns(3)
@@ -587,16 +587,16 @@ with tab5:
             st.plotly_chart(fig_exits_timeline, use_container_width=True)
 
         # Most common exit pages
-        if 'path' in page_exits.columns:
+        if 'exit_page' in page_exits.columns:
             st.subheader("Exit Pages")
-            exits_by_path = page_exits['path'].value_counts().head(10)
+            exits_by_path = page_exits['exit_page'].value_counts().head(10)
 
             fig_exits_path = px.bar(
                 x=exits_by_path.values,
                 y=exits_by_path.index,
                 orientation='h',
                 title='Top 10 Exit Pages',
-                labels={'x': 'Number of Exits', 'y': 'Page Path'},
+                labels={'x': 'Number of Exits', 'y': 'Exit Page'},
                 color=exits_by_path.values,
                 color_continuous_scale='Reds'
             )
@@ -608,8 +608,8 @@ with tab5:
 with tab6:
     st.header("Quick Exits Analysis")
 
-    # Filter for QUICK_EXIT events
-    quick_exits = df[df['event_type'] == 'QUICK_EXIT'].copy()
+    # Filter for quick_exit events
+    quick_exits = df[df['event_type'] == 'quick_exit'].copy()
 
     if not quick_exits.empty:
         col1, col2, col3 = st.columns(3)
@@ -646,18 +646,18 @@ with tab6:
             st.plotly_chart(fig_quick_timeline, use_container_width=True)
 
         # Most common quick exit pages
-        if 'path' in quick_exits.columns:
+        if 'exit_page' in quick_exits.columns:
             st.subheader("Quick Exit Pages")
-            st.write("Pages where users quickly exit (indicating potential issues or confusion)")
+            st.write("Pages where users quickly exit")
 
-            quick_by_path = quick_exits['path'].value_counts().head(10)
+            quick_by_path = quick_exits['exit_page'].value_counts().head(10)
 
             fig_quick_path = px.bar(
                 x=quick_by_path.values,
                 y=quick_by_path.index,
                 orientation='h',
                 title='Top 10 Quick Exit Pages',
-                labels={'x': 'Number of Quick Exits', 'y': 'Page Path'},
+                labels={'x': 'Number of Quick Exits', 'y': 'Exit Page'},
                 color=quick_by_path.values,
                 color_continuous_scale='Oranges'
             )
@@ -669,8 +669,8 @@ with tab6:
 with tab7:
     st.header("Downloads Analysis")
 
-    # Filter for DOWNLOAD events
-    downloads = df[df['event_type'] == 'DOWNLOAD'].copy()
+    # Filter for download events
+    downloads = df[df['event_type'] == 'download'].copy()
 
     if not downloads.empty:
         col1, col2, col3 = st.columns(3)

@@ -55,6 +55,8 @@ care-arrangement-plan-analytics/
 
 #### Data Processing (`src/data_processing/`)
 - **`parser.py`** - Parses raw log entries, filters out assets and anonymous users
+  - Extracts `path` field for page visits
+  - Extracts `exit_page` field for page_exit and quick_exit events
 - **`metrics.py`** - Calculates all metrics (funnel, completion rates, deduplication)
 - **`constants.py`** - Defines the 12-page journey order and display names
 - **`processor.py`** - Orchestrates the entire data pipeline
@@ -105,15 +107,16 @@ pip install -r requirements.txt
 
 ### Running the Dashboard
 
-**New Structure (Recommended):**
-```bash
-streamlit run app.py
-```
-
-**Legacy Dashboard (Still works):**
+**Full Dashboard (Recommended):**
 ```bash
 streamlit run dashboard.py
 ```
+
+**New Modular Structure (Partial - Metrics Only):**
+```bash
+streamlit run app.py
+```
+_Note: app.py demonstrates the new modular code structure but only shows key metrics. Full dashboard functionality is in dashboard.py_
 
 ### Using the Dashboard
 
@@ -152,7 +155,11 @@ python -m unittest tests.test_data_processor.TestPageVisitDeduplication
 
 - **Page Visit Deduplication**: Counts only the first visit per user-page combination globally
 - **12-Page Conversion Funnel**: Tracks user progress through the entire journey
-- **Event Tracking**: Monitors link clicks, page exits, quick exits, and downloads
+- **Event Tracking**:
+  - **Page visits**: Tracked via `path` field
+  - **Page exits & Quick exits**: Tracked via `exit_page` field (shows which page user left from)
+  - **Link clicks**: Tracked via `path` field
+  - **Downloads**: Tracked by type (PDF, HTML, etc.)
 - **Weekly Analytics**: Aggregates metrics by week
 - **Completion Rates**: Calculates user journey completion percentages
 

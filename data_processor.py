@@ -21,12 +21,14 @@ def parse_log_data(df_raw):
         event_type_match = re.search(r'event_type=([^,\)]+)', log_entry)
         user_id_match = re.search(r'user_id=([^,\)]+)', log_entry)
         path_match = re.search(r'path=([^,\)]+)', log_entry)
+        exit_page_match = re.search(r'exit_page=([^,\)]+)', log_entry)
         method_match = re.search(r'method=([^,\)]+)', log_entry)
         status_code_match = re.search(r'status_code=([^,\)]+)', log_entry)
         download_type_match = re.search(r'download_type=([^,\)]+)', log_entry)
 
         # Get path and event_type values
         path_value = path_match.group(1) if path_match else None
+        exit_page_value = exit_page_match.group(1) if exit_page_match else None
         event_type_value = event_type_match.group(1) if event_type_match else None
 
         # Skip if event_type is page_visit but no path
@@ -48,6 +50,7 @@ def parse_log_data(df_raw):
             'event_type': event_type_value,
             'user_id': user_id_match.group(1) if user_id_match else None,
             'path': path_value,
+            'exit_page': exit_page_value,
             'method': method_match.group(1) if method_match else None,
             'status_code': status_code_match.group(1) if status_code_match else None,
             'download_type': download_type_match.group(1) if download_type_match else None,
