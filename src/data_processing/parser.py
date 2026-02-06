@@ -12,7 +12,7 @@ def parse_log_data(df_raw):
 
     # Parse the log entries into separate columns
     parsed_rows = []
-    excluded_patterns = ['/assets', '/images', '/js', '/fonts', '/css', '/.git', '/.env', '/.well-known']
+    excluded_patterns = ['/assets', '/images', '/js', '/fonts', '/css', '/.git', '/.env', '/.well-known', '/apple-touch-icon', '/apple-touch-precomposed', '/rebrand']
 
     for idx, row in df_raw.iterrows():
         log_entry = str(row.iloc[0])
@@ -26,9 +26,12 @@ def parse_log_data(df_raw):
         method_match = re.search(r'method=([^,\)]+)', log_entry)
         status_code_match = re.search(r'status_code=([^,\)]+)', log_entry)
         download_type_match = re.search(r'download_type=([^,\)]+)', log_entry)
+        link_url_match = re.search(r'link_url=([^,\)]+)', log_entry)
+        link_type_match = re.search(r'link_type=([^,\)]+)', log_entry)
+        page_match = re.search(r'(?<!\w)page=([^,\)]+)', log_entry)
 
-        # Get path and event_type values
-        path_value = path_match.group(1) if path_match else None
+        # Get path and event_type values (use 'page' as fallback for 'path')
+        path_value = path_match.group(1) if path_match else (page_match.group(1) if page_match else None)
         exit_page_value = exit_page_match.group(1) if exit_page_match else None
         event_type_value = event_type_match.group(1) if event_type_match else None
 
@@ -55,6 +58,8 @@ def parse_log_data(df_raw):
             'method': method_match.group(1) if method_match else None,
             'status_code': status_code_match.group(1) if status_code_match else None,
             'download_type': download_type_match.group(1) if download_type_match else None,
+            'link_url': link_url_match.group(1) if link_url_match else None,
+            'link_type': link_type_match.group(1) if link_type_match else None,
         }
 
         parsed_rows.append(parsed_row)

@@ -96,14 +96,16 @@ def _display_page_visits(filtered_page_visits):
 
         with col1:
             st.subheader("Most Visited Pages")
-            top_pages = filtered_page_visits['path'].value_counts().head(10)
+            top_pages = filtered_page_visits['path'].value_counts().head(10).reset_index()
+            top_pages.columns = ['Page Path', 'Visits']
 
             fig_pages = px.bar(
-                x=top_pages.values,
-                y=top_pages.index,
+                top_pages,
+                x='Visits',
+                y='Page Path',
                 orientation='h',
-                labels={'x': 'Visits', 'y': 'Page Path'},
-                color=top_pages.values,
+                labels={'Visits': 'Visits', 'Page Path': 'Page Path'},
+                color='Visits',
                 color_continuous_scale='Viridis'
             )
             fig_pages.update_layout(height=400, showlegend=False)
@@ -328,22 +330,78 @@ def _display_link_clicks(df):
             fig_clicks_timeline.update_layout(height=400)
             st.plotly_chart(fig_clicks_timeline, use_container_width=True)
 
+        # Link type breakdown
+        if 'link_type' in link_clicks.columns:
+            link_type_data = link_clicks[link_clicks['link_type'].notna()]
+            if not link_type_data.empty:
+                st.subheader("Clicks by Link Type")
+                link_type_counts = link_type_data['link_type'].value_counts().reset_index()
+                link_type_counts.columns = ['Link Type', 'Count']
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    for _, row in link_type_counts.iterrows():
+                        st.metric(row['Link Type'].title(), f"{row['Count']:,}")
+                with col2:
+                    fig_link_type = px.pie(
+                        link_type_counts,
+                        values='Count',
+                        names='Link Type',
+                        title='Link Click Distribution by Type'
+                    )
+                    st.plotly_chart(fig_link_type, use_container_width=True)
+
+        # Most clicked links
+        st.subheader("Most Clicked Links")
+        if 'link_url' in link_clicks.columns:
+            link_clicks_filtered = link_clicks[link_clicks['link_url'].notna()]
+        else:
+            link_clicks_filtered = pd.DataFrame()
+
+        if not link_clicks_filtered.empty:
+            top_links = link_clicks_filtered['link_url'].value_counts().head(10).reset_index()
+            top_links.columns = ['Link', 'Clicks']
+
+            fig_top_links = px.bar(
+                top_links,
+                x='Clicks',
+                y='Link',
+                orientation='h',
+                title='Top 10 Most Clicked Links',
+                labels={'Clicks': 'Number of Clicks', 'Link': 'Link'},
+                color='Clicks',
+                color_continuous_scale='Purples'
+            )
+            fig_top_links.update_layout(height=400, showlegend=False)
+            st.plotly_chart(fig_top_links, use_container_width=True)
+        else:
+            st.info("No link URL data found. Check that log entries contain a 'link_url' field.")
+
         # Most clicked links by path
+        st.subheader("Link Clicks by Page")
         if 'path' in link_clicks.columns:
-            st.subheader("Link Clicks by Page")
-            clicks_by_path = link_clicks['path'].value_counts().head(10)
+            clicks_with_path = link_clicks[link_clicks['path'].notna()]
+        else:
+            clicks_with_path = pd.DataFrame()
+
+        if not clicks_with_path.empty:
+            clicks_by_path = clicks_with_path['path'].value_counts().head(10).reset_index()
+            clicks_by_path.columns = ['Page Path', 'Number of Clicks']
 
             fig_clicks_path = px.bar(
-                x=clicks_by_path.values,
-                y=clicks_by_path.index,
+                clicks_by_path,
+                x='Number of Clicks',
+                y='Page Path',
                 orientation='h',
                 title='Top 10 Pages with Link Clicks',
-                labels={'x': 'Number of Clicks', 'y': 'Page Path'},
-                color=clicks_by_path.values,
+                labels={'Number of Clicks': 'Number of Clicks', 'Page Path': 'Page Path'},
+                color='Number of Clicks',
                 color_continuous_scale='Blues'
             )
             fig_clicks_path.update_layout(height=400, showlegend=False)
             st.plotly_chart(fig_clicks_path, use_container_width=True)
+        else:
+            st.info("No page path data found for link click events.")
     else:
         st.info("No link click data available")
 
@@ -392,15 +450,17 @@ def _display_page_exits(df):
         # Most common exit pages
         if 'exit_page' in page_exits.columns:
             st.subheader("Exit Pages")
-            exits_by_path = page_exits['exit_page'].value_counts().head(10)
+            exits_by_path = page_exits['exit_page'].value_counts().head(10).reset_index()
+            exits_by_path.columns = ['Exit Page', 'Number of Exits']
 
             fig_exits_path = px.bar(
-                x=exits_by_path.values,
-                y=exits_by_path.index,
+                exits_by_path,
+                x='Number of Exits',
+                y='Exit Page',
                 orientation='h',
                 title='Top 10 Exit Pages',
-                labels={'x': 'Number of Exits', 'y': 'Exit Page'},
-                color=exits_by_path.values,
+                labels={'Number of Exits': 'Number of Exits', 'Exit Page': 'Exit Page'},
+                color='Number of Exits',
                 color_continuous_scale='Reds'
             )
             fig_exits_path.update_layout(height=400, showlegend=False)
@@ -455,15 +515,17 @@ def _display_quick_exits(df):
             st.subheader("Quick Exit Pages")
             st.write("Pages where users quickly exit (indicating potential issues or confusion)")
 
-            quick_by_path = quick_exits['exit_page'].value_counts().head(10)
+            quick_by_path = quick_exits['exit_page'].value_counts().head(10).reset_index()
+            quick_by_path.columns = ['Exit Page', 'Number of Quick Exits']
 
             fig_quick_path = px.bar(
-                x=quick_by_path.values,
-                y=quick_by_path.index,
+                quick_by_path,
+                x='Number of Quick Exits',
+                y='Exit Page',
                 orientation='h',
                 title='Top 10 Quick Exit Pages',
-                labels={'x': 'Number of Quick Exits', 'y': 'Exit Page'},
-                color=quick_by_path.values,
+                labels={'Number of Quick Exits': 'Number of Quick Exits', 'Exit Page': 'Exit Page'},
+                color='Number of Quick Exits',
                 color_continuous_scale='Oranges'
             )
             fig_quick_path.update_layout(height=400, showlegend=False)
@@ -560,6 +622,34 @@ def _display_downloads(df):
                 )
                 fig_downloads_timeline.update_layout(height=400)
                 st.plotly_chart(fig_downloads_timeline, use_container_width=True)
+
+            # Specific metrics for each type
+            st.subheader("Download Type Details")
+
+            for dtype in ['output_pdf', 'offline_pdf', 'output_html']:
+                dtype_data = downloads[downloads['download_type'] == dtype]
+
+                if not dtype_data.empty:
+                    with st.expander(f"📄 {dtype.replace('_', ' ').title()} ({len(dtype_data)} downloads)"):
+                        col1, col2, col3 = st.columns(3)
+
+                        with col1:
+                            st.metric("Total Downloads", f"{len(dtype_data):,}")
+
+                        with col2:
+                            unique_users_type = dtype_data['user_id'].nunique()
+                            st.metric("Unique Users", f"{unique_users_type:,}")
+
+                        with col3:
+                            avg_type = len(dtype_data) / unique_users_type if unique_users_type > 0 else 0
+                            st.metric("Avg per User", f"{avg_type:.2f}")
+
+                        # Downloads by page
+                        if 'path' in dtype_data.columns:
+                            type_by_path = dtype_data['path'].value_counts().head(5)
+                            if not type_by_path.empty:
+                                st.write(f"**Top pages for {dtype}:**")
+                                st.dataframe(type_by_path.reset_index().rename(columns={'index': 'Page', 'path': 'Downloads'}), use_container_width=True)
         else:
             st.warning("No download_type field found in the data")
     else:
