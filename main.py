@@ -285,47 +285,115 @@ def getFinalCompletionCS(page_visits):
     if not page_visits.empty and 'timestamp' in page_visits.columns:
         # Filter for domestic abuse and confirmation pages
         domestic_abuse = page_visits[page_visits['path'].str.contains('domestic-abuse', case=False, na=False)]
+        getting_help_confirmation = page_visits[page_visits['path'].str.contains('getting-help', case=False, na=False)]
+        parenting_plan_confirmation = page_visits[page_visits['path'].str.contains('parenting-plan', case=False, na=False)]
+        options_no_contact_confirmation = page_visits[page_visits['path'].str.contains('options-no-contact', case=False, na=False)]
+        court_order_confirmation = page_visits[page_visits['path'].str.contains('court-order', case=False, na=False)]
         confirmation = page_visits[page_visits['path'].str.contains('confirmation', case=False, na=False)]
 
         # Simple method: count totals per week (for unknown IDs)
         domestic_abuse_weekly = domestic_abuse.groupby('week').size().reset_index(name='domestic_abuse_visits')
         confirmation_weekly = confirmation.groupby('week').size().reset_index(name='confirmation_visits')
+        getting_help_confirmation_weekly = getting_help_confirmation.groupby('week').size().reset_index(name='getting_help_confirmation_visits')
+        parenting_plan_confirmation_weekly = parenting_plan_confirmation.groupby('week').size().reset_index(name='parenting_plan_confirmation_visits')
+        options_no_contact_confirmation_weekly = options_no_contact_confirmation.groupby('week').size().reset_index(name='options_no_contact_confirmation_visits')
+        court_order_confirmation_weekly = court_order_confirmation.groupby('week').size().reset_index(name='court_order_confirmation_visits')
 
         # Merge and calculate simple completion rate
         weekly_completion = pd.merge(domestic_abuse_weekly, confirmation_weekly, on='week', how='outer').fillna(0)
         weekly_completion['simple_completion_rate'] = (weekly_completion['confirmation_visits'] / weekly_completion['domestic_abuse_visits'] * 100).round(2)
         weekly_completion['simple_completion_rate'] = weekly_completion['simple_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
 
+        getting_help_weekly_completion = pd.merge(domestic_abuse_weekly, getting_help_confirmation_weekly, on='week', how='outer').fillna(0)
+        getting_help_weekly_completion['simple_completion_rate'] = (getting_help_weekly_completion['getting_help_confirmation_visits'] / getting_help_weekly_completion['domestic_abuse_visits'] * 100).round(2)
+        getting_help_weekly_completion['simple_completion_rate'] = getting_help_weekly_completion['simple_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
+        parenting_plan_weekly_completion = pd.merge(domestic_abuse_weekly, parenting_plan_confirmation_weekly, on='week', how='outer').fillna(0)
+        parenting_plan_weekly_completion['simple_completion_rate'] = (parenting_plan_weekly_completion['parenting_plan_confirmation_visits'] / parenting_plan_weekly_completion['domestic_abuse_visits'] * 100).round(2)
+        parenting_plan_weekly_completion['simple_completion_rate'] = parenting_plan_weekly_completion['simple_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
+        options_no_contact_weekly_completion = pd.merge(domestic_abuse_weekly, options_no_contact_confirmation_weekly, on='week', how='outer').fillna(0)
+        options_no_contact_weekly_completion['simple_completion_rate'] = (options_no_contact_weekly_completion['options_no_contact_confirmation_visits'] / options_no_contact_weekly_completion['domestic_abuse_visits'] * 100).round(2)
+        options_no_contact_weekly_completion['simple_completion_rate'] = options_no_contact_weekly_completion['simple_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
+        court_order_weekly_completion = pd.merge(domestic_abuse_weekly, court_order_confirmation_weekly, on='week', how='outer').fillna(0)
+        court_order_weekly_completion['simple_completion_rate'] = (court_order_weekly_completion['court_order_confirmation_visits'] / court_order_weekly_completion['domestic_abuse_visits'] * 100).round(2)
+        court_order_weekly_completion['simple_completion_rate'] = court_order_weekly_completion['simple_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
         # Advanced method: unique user completion (for known IDs)
         # Get unique user_id + week combinations for domestic-abuse
-        domestic_check_users = domestic_abuse.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
+        domestic_abuse_users = domestic_abuse.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
         # Get unique user_id + week combinations for confirmation
         confirmation_users = confirmation.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
+        getting_help_confirmation_users = getting_help_confirmation.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
+        parenting_plan_confirmation_users = parenting_plan_confirmation.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
+        options_no_contact_confirmation_users = options_no_contact_confirmation.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
+        court_order_confirmation_users = court_order_confirmation.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
 
         # Mark users who reached each stage
-        domestic_check_users['reached_domestic_abuse'] = 1
+        domestic_abuse_users['reached_domestic_abuse'] = 1
         confirmation_users['reached_confirmation'] = 1
+        getting_help_confirmation_users['reached_getting_help_confirmation'] = 1
+        parenting_plan_confirmation_users['reached_parenting_plan_confirmation'] = 1
+        options_no_contact_confirmation_users['reached_options_no_contact_confirmation'] = 1
+        court_order_confirmation_users['reached_court_order_confirmation'] = 1
 
         # Merge to find users who reached both stages
-        user_completion = pd.merge(domestic_check_users, confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
+        user_completion = pd.merge(domestic_abuse_users, confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
+        getting_help_user_completion = pd.merge(domestic_abuse_users, getting_help_confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
+        parenting_plan_user_completion = pd.merge(domestic_abuse_users, parenting_plan_confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
+        options_no_contact_user_completion = pd.merge(domestic_abuse_users, options_no_contact_confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
+        court_order_user_completion = pd.merge(domestic_abuse_users, court_order_confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
 
         # Count unique users per week
-        unique_safety_check = user_completion.groupby('week')['reached_domestic_abuse'].sum().reset_index(name='unique_users_domestic_abuse')
+        unique_domestic_abuse = user_completion.groupby('week')['reached_domestic_abuse'].sum().reset_index(name='unique_users_domestic_abuse')
         unique_completed = user_completion[user_completion['reached_confirmation'] == 1].groupby('week').size().reset_index(name='unique_users_completed')
+        unique_getting_help_completed = getting_help_user_completion[getting_help_user_completion['reached_getting_help_confirmation'] == 1].groupby('week').size().reset_index(name='unique_getting_help_users_completed')
+        unique_parenting_plan_completed = parenting_plan_user_completion[parenting_plan_user_completion['reached_parenting_plan_confirmation'] == 1].groupby('week').size().reset_index(name='unique_parenting_plan_users_completed')
+        unique_options_no_contact_completed = options_no_contact_user_completion[options_no_contact_user_completion['reached_options_no_contact_confirmation'] == 1].groupby('week').size().reset_index(name='unique_options_no_contact_users_completed')
+        unique_court_order_completed = court_order_user_completion[court_order_user_completion['reached_court_order_confirmation'] == 1].groupby('week').size().reset_index(name='unique_court_order_users_completed')
 
         # Merge and calculate user-based completion rate
-        user_based_completion = pd.merge(unique_safety_check, unique_completed, on='week', how='outer').fillna(0)
+        user_based_completion = pd.merge(unique_domestic_abuse, unique_completed, on='week', how='outer').fillna(0)
         user_based_completion['user_completion_rate'] = (user_based_completion['unique_users_completed'] / user_based_completion['unique_users_domestic_abuse'] * 100).round(2)
         user_based_completion['user_completion_rate'] = user_based_completion['user_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
 
+        getting_help_user_based_completion = pd.merge(unique_domestic_abuse, unique_getting_help_completed, on='week', how='outer').fillna(0)
+        getting_help_user_based_completion['getting_help_user_completion_rate'] = (getting_help_user_based_completion['unique_getting_help_users_completed'] / getting_help_user_based_completion['unique_users_domestic_abuse'] * 100).round(2)
+        getting_help_user_based_completion['getting_help_user_completion_rate'] = getting_help_user_based_completion['getting_help_user_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
+        parenting_plan_user_based_completion = pd.merge(unique_domestic_abuse, unique_parenting_plan_completed, on='week', how='outer').fillna(0)
+        parenting_plan_user_based_completion['parenting_plan_user_completion_rate'] = (parenting_plan_user_based_completion['unique_parenting_plan_users_completed'] / parenting_plan_user_based_completion['unique_users_domestic_abuse'] * 100).round(2)
+        parenting_plan_user_based_completion['parenting_plan_user_completion_rate'] = parenting_plan_user_based_completion['parenting_plan_user_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
+        options_no_contact_user_based_completion = pd.merge(unique_domestic_abuse, unique_options_no_contact_completed, on='week', how='outer').fillna(0)
+        options_no_contact_user_based_completion['options_no_contact_user_completion_rate'] = (options_no_contact_user_based_completion['unique_options_no_contact_users_completed'] / options_no_contact_user_based_completion['unique_users_domestic_abuse'] * 100).round(2)
+        options_no_contact_user_based_completion['options_no_contact_user_completion_rate'] = options_no_contact_user_based_completion['options_no_contact_user_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
+        court_order_user_based_completion = pd.merge(unique_domestic_abuse, unique_court_order_completed, on='week', how='outer').fillna(0)
+        court_order_user_based_completion['court_order_user_completion_rate'] = (court_order_user_based_completion['unique_court_order_users_completed'] / court_order_user_based_completion['unique_users_domestic_abuse'] * 100).round(2)
+        court_order_user_based_completion['court_order_user_completion_rate'] = court_order_user_based_completion['court_order_user_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
+
         # Combine both methods
         final_completion = pd.merge(weekly_completion, user_based_completion, on='week', how='outer').fillna(0)
+        # final_completion['week'] = final_completion['week'].astype(str)
+
+        final_completion = pd.merge(getting_help_weekly_completion, getting_help_user_based_completion, on='week', how='outer').fillna(0)
+        # final_completion['week'] = final_completion['week'].astype(str)
+
+        final_completion = pd.merge(parenting_plan_weekly_completion, parenting_plan_user_based_completion, on='week', how='outer').fillna(0)
+        # final_completion['week'] = final_completion['week'].astype(str)
+
+        final_completion = pd.merge(options_no_contact_weekly_completion, options_no_contact_user_based_completion, on='week', how='outer').fillna(0)
+
+        final_completion = pd.merge(court_order_weekly_completion, court_order_user_based_completion, on='week', how='outer').fillna(0)
+
         final_completion['week'] = final_completion['week'].astype(str)
 
         print(f"\nWeekly completion rate created with {len(final_completion)} rows")
 
     else:
-        final_completion = pd.DataFrame(columns=['week', 'domestic_abuse_visits', 'confirmation_visits', 'simple_completion_rate', 'unique_users_domestic_abuse', 'unique_users_completed', 'user_completion_rate'])
+        final_completion = pd.DataFrame(columns=['week', 'domestic_abuse_visits', 'confirmation_visits', 'getting_help_confirmation_visits', 'parenting_plan_confirmation_visits', 'options_no_contact_confirmation_visits', 'simple_completion_rate', 'unique_users_domestic_abuse', 'unique_users_completed', 'user_completion_rate'])
         print("\nNo page_visit data for completion rate")
 
     return final_completion
