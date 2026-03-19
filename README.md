@@ -9,7 +9,6 @@ A Streamlit-based analytics dashboard for analyzing Care Arrangement Plan user b
 ```
 care-arrangement-plan-analytics/
 ├── app.py                          # ⭐ Main application entry point
-├── dashboard.py                    # Legacy dashboard (deprecated)
 ├── data_processor.py               # Legacy data processor (deprecated)
 ├── main.py                         # CLI batch processing script
 ├── requirements.txt                # Python dependencies
@@ -53,7 +52,6 @@ care-arrangement-plan-analytics/
 #### Entry Points
 - **`app.py`** ⭐ - Main dashboard application (modular, fully functional)
 - **`main.py`** - CLI script for batch processing
-- **`dashboard.py`** - Legacy dashboard (deprecated, use app.py instead)
 
 #### Data Processing (`src/data_processing/`)
 - **`parser.py`** - Parses raw log entries, filters out assets and anonymous users

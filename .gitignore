@@ -15,6 +15,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Environment variables (never commit proxy URLs or secrets)
+.env
+.env.*
+
 # OS files
 .DS_Store
 *.swp

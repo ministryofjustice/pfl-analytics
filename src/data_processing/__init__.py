@@ -6,7 +6,8 @@ from .metrics import (
     calculate_per_page_completion_rate,
     calculate_funnel_data
 )
-from .processor import process_log_file
+from .processor import process_dataframe, fetch_services
+from .opensearch_client import fetch_all_events
 
 __all__ = [
     'parse_log_data',
@@ -14,5 +15,6 @@ __all__ = [
     'calculate_completion_rate',
     'calculate_per_page_completion_rate',
     'calculate_funnel_data',
-    'process_log_file'
+    'process_dataframe',
+    'fetch_all_events',
 ]
