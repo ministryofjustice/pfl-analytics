@@ -1,6 +1,6 @@
 """Metrics calculation functions."""
 import pandas as pd
-from .constants import PAGE_ORDER, PAGE_NAMES
+from .constants import PAGE_ORDER, PAGE_NAMES, PAGE_ORDER_CS, PAGE_NAMES_CS
 
 
 def calculate_weekly_page_visits(df):
@@ -77,8 +77,16 @@ def calculate_completion_rate(page_visits):
     return final_completion
 
 
-def calculate_per_page_completion_rate(page_visits):
-    """Calculate completion rates for each page in the journey."""
+def calculate_per_page_completion_rate(page_visits, page_order=None):
+    """Calculate completion rates for each page in the journey.
+
+    Args:
+        page_visits: DataFrame of page_visit events
+        page_order: List of paths defining the journey. Defaults to CAP page order.
+    """
+    if page_order is None:
+        page_order = PAGE_ORDER
+
     if page_visits.empty or 'timestamp' not in page_visits.columns:
         return pd.DataFrame()
 
@@ -97,15 +105,15 @@ def calculate_per_page_completion_rate(page_visits):
         # Use deduplicated data for unique users count
         week_data_dedup = deduplicated_visits[deduplicated_visits['week'] == week]
 
-        for page in PAGE_ORDER:
+        for page in page_order:
             page_data_raw = week_data_raw[week_data_raw['path'] == page]
             page_data_dedup = week_data_dedup[week_data_dedup['path'] == page]
 
             results.append({
                 'week': week,
                 'page': page,
-                'total_visits': len(page_data_raw),  # Count from original data
-                'unique_users': page_data_dedup['user_id'].nunique() if not page_data_dedup.empty else 0  # Count from deduplicated data
+                'total_visits': len(page_data_raw),
+                'unique_users': page_data_dedup['user_id'].nunique() if not page_data_dedup.empty else 0
             })
 
     per_page_df = pd.DataFrame(results)
@@ -114,8 +122,19 @@ def calculate_per_page_completion_rate(page_visits):
     return per_page_df
 
 
-def calculate_funnel_data(page_visits):
-    """Calculate funnel data across all pages in the journey."""
+def calculate_funnel_data(page_visits, page_order=None, page_names=None):
+    """Calculate funnel data across all pages in the journey.
+
+    Args:
+        page_visits: DataFrame of page_visit events
+        page_order: List of paths defining the journey. Defaults to CAP page order.
+        page_names: Dict mapping paths to display names. Defaults to CAP page names.
+    """
+    if page_order is None:
+        page_order = PAGE_ORDER
+    if page_names is None:
+        page_names = PAGE_NAMES
+
     if page_visits.empty:
         return pd.DataFrame()
 
@@ -124,12 +143,12 @@ def calculate_funnel_data(page_visits):
 
     funnel_data = []
 
-    for page in PAGE_ORDER:
+    for page in page_order:
         page_data = deduplicated_visits[deduplicated_visits['path'] == page]
 
         funnel_data.append({
             'page': page,
-            'page_name': PAGE_NAMES.get(page, page),
+            'page_name': page_names.get(page, page),
             'total_visits': len(page_data),
             'unique_users': page_data['user_id'].nunique() if not page_data.empty else 0
         })

@@ -7,7 +7,7 @@ import sys
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from data_processing import process_log_file, process_dataframe, fetch_all_events
+from data_processing import load_log_file, process_dataframe, fetch_all_events
 from utils.file_utils import create_excel_download
 from components.sidebar import display_data_source_selector, display_download_section
 from components.metrics_display import display_key_metrics
@@ -20,69 +20,83 @@ st.set_page_config(
     layout="wide"
 )
 
-# Title
 st.title("📊 Family Justice Analytics Dashboard")
 
-# Setup input directory
 input_dir = Path("input")
 input_dir.mkdir(exist_ok=True)
 
-# Data source selection
+# --- Step 1: data source selector (always rendered so sidebar stays visible) ---
 source_config = display_data_source_selector(input_dir)
 
-# Determine label for footer / downloads
-if source_config['source'] == 'file':
-    data_label = source_config['selected_file']
-else:
-    service_names = [s['name'] for s in source_config.get('services', [])]
-    data_label = ', '.join(service_names) if service_names else 'opensearch'
-
-# Load data on button click or if already loaded in session
+# When Load is clicked, clear any cached raw data and store the new config
 if source_config['load']:
-    st.session_state['load_data'] = True
-    st.session_state['data_label'] = data_label
+    st.session_state.pop('raw_df', None)
+    st.session_state.pop('raw_label', None)
     st.session_state['source_config'] = source_config
 
-if 'load_data' not in st.session_state:
+if 'source_config' not in st.session_state:
     st.info("👈 Choose a data source in the sidebar and click Load to begin")
     st.stop()
 
-# Use the config that was active when Load was last clicked
-active_config = st.session_state.get('source_config', source_config)
-active_label = st.session_state.get('data_label', data_label)
+active_config = st.session_state['source_config']
 
-with st.spinner("Loading data..."):
-    try:
-        if active_config['source'] == 'file':
-            file_path = input_dir / active_config['selected_file']
-            data = process_log_file(str(file_path))
-        else:
-            services = active_config.get('services', [])
-            if not services:
-                st.warning("No OpenSearch URLs configured. Enter at least one service URL.")
-                st.stop()
+# --- Step 2: fetch / read raw DataFrame (cached so filter changes don't re-fetch) ---
+if 'raw_df' not in st.session_state:
+    with st.spinner("Loading data..."):
+        try:
+            if active_config['source'] == 'file':
+                file_path = input_dir / active_config['selected_file']
+                raw_df = load_log_file(str(file_path))
+                st.session_state['raw_label'] = active_config['selected_file']
+            else:
+                services = active_config.get('services', [])
+                if not services:
+                    st.warning("No OpenSearch URLs configured. Enter at least one service URL.")
+                    st.stop()
 
-            start_date, end_date = (active_config['date_range'] or (None, None))
-            frames = []
-            for svc in services:
-                svc_df = fetch_all_events(
-                    proxy_url=svc['url'],
-                    index=svc['index'],
-                    start_date=start_date,
-                    end_date=end_date,
-                    service_name=svc['name'],
-                )
-                frames.append(svc_df)
+                start_date, end_date = (active_config['date_range'] or (None, None))
+                frames = []
+                for svc in services:
+                    frames.append(fetch_all_events(
+                        proxy_url=svc['url'],
+                        index=svc['index'],
+                        start_date=start_date,
+                        end_date=end_date,
+                        service_name=svc['name'],
+                    ))
+                raw_df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+                service_names = [s['name'] for s in services]
+                st.session_state['raw_label'] = ', '.join(service_names)
 
-            combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-            data = process_dataframe(combined)
+            st.session_state['raw_df'] = raw_df
+        except Exception as e:
+            st.error(f"Error loading data: {e}")
+            st.stop()
 
-        st.success(f"✅ Successfully loaded {len(data['parsed_data'])} records")
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        st.stop()
+raw_df = st.session_state['raw_df']
+active_label = st.session_state.get('raw_label', '')
 
-# Extract data
+# --- Step 3: service filter (only shown when multiple services are present) ---
+if 'service' in raw_df.columns and raw_df['service'].nunique() > 1:
+    available_services = sorted(raw_df['service'].dropna().unique().tolist())
+    st.sidebar.header("Filters")
+    selected_services = st.sidebar.multiselect(
+        "Services",
+        available_services,
+        default=available_services,
+    )
+    filtered_df = raw_df[raw_df['service'].isin(selected_services)] if selected_services else raw_df
+else:
+    filtered_df = raw_df
+
+if filtered_df.empty:
+    st.warning("No data for the selected services.")
+    st.stop()
+
+# --- Step 4: process filtered data ---
+data = process_dataframe(filtered_df)
+st.success(f"✅ {len(data['parsed_data'])} records loaded")
+
 df = data['parsed_data']
 weekly_summary = data['weekly_summary']
 completion_rate = data['completion_rate']

@@ -3,26 +3,10 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import os
+import sys
 
-
-# Services to connect to. Add new services here — set the env var in each deployment namespace.
-# URL input is shown for all services; only services with a URL entered are fetched.
-SERVICES = [
-    {
-        'name': 'CAP',
-        'url_env': 'CAP_OPENSEARCH_URL',
-        'default_url': os.environ.get('OPENSEARCH_PROXY_URL', 'http://localhost:8080'),
-        'index': 'cap-analytics',
-        'namespace': 'care-arrangement-plan-dev',
-    },
-    {
-        'name': 'Connecting Services',
-        'url_env': 'CS_OPENSEARCH_URL',
-        'default_url': '',
-        'index': 'cs-analytics',
-        'namespace': 'pfl-connecting-services-dev',
-    },
-]
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from config import SERVICES
 
 
 def display_data_source_selector(input_dir):
