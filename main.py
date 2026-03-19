@@ -1,6 +1,8 @@
+import numpy as np
 import pandas as pd
 import re
 import os
+from functools import reduce
 
 # Define directories
 input_dir = "input"
@@ -135,62 +137,33 @@ def process():
     page_visits = df[df['event_type'] == 'page_visit'].copy()
 
     # Calculate weekly summary
-    weeklySummaryToWrite = getWeeklySummaryCAP(page_visits) if int(systemSelection) == 1 else getWeeklySummaryCS(page_visits)
+    weeklySummaryToWrite = getWeeklySummary(page_visits)
 
-    # Calculate weekly completion rate
-    finalCompletionToWrite = getFinalCompletionCAP(page_visits) if int(systemSelection) == 1 else getFinalCompletionCS(page_visits)
+    if int(systemSelection) == 1:
 
-    # Save to Excel with multiple sheets
-    with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Parsed_Data', index=False)
-        weeklySummaryToWrite.to_excel(writer, sheet_name='Weekly_Page_Visits', index=False)
-        finalCompletionToWrite.to_excel(writer, sheet_name='Weekly_Completion_Rate', index=False)
+        # Calculate weekly completion rate
+        finalCompletionToWrite = getFinalCompletionCAP(page_visits)
+
+        # Save to Excel with multiple sheets
+        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Parsed_Data', index=False)
+            weeklySummaryToWrite.to_excel(writer, sheet_name='Weekly_Page_Visits', index=False)
+            finalCompletionToWrite.to_excel(writer, sheet_name='Weekly_Completion_Rate', index=False)
+
+    else:
+
+        finalCompletionList = getFinalCompletionCS(page_visits)
+
+        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Parsed_Data', index=False)
+            weeklySummaryToWrite.to_excel(writer, sheet_name='Weekly_Page_Visits', index=False)
+            for sheet_name, df in finalCompletionList.items():
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+
 
     print(f"\nData saved to {output_file}")
 
-def getWeeklySummaryCAP(page_visits):
-    if not page_visits.empty and 'timestamp' in page_visits.columns:
-        # Convert timestamp to datetime
-        page_visits['timestamp'] = pd.to_datetime(page_visits['timestamp'])
-
-        # Extract week
-        page_visits['week'] = page_visits['timestamp'].dt.to_period('W')
-
-        # Group by week and path, count occurrences
-        weekly_summary = page_visits.groupby(['week', 'path']).size().reset_index(name='count')
-
-        # Sort by week and count (descending within each week)
-        weekly_summary = weekly_summary.sort_values(['week', 'count'], ascending=[True, False])
-
-        # Add a blank row between weeks for readability
-        formatted_weekly_summary = []
-        current_week = None
-
-        for idx, row in weekly_summary.iterrows():
-            week_str = str(row['week'])
-
-            # Add blank row between weeks (except for the first week)
-            if current_week is not None and current_week != week_str:
-                formatted_weekly_summary.append({'week': '', 'path': '', 'count': ''})
-
-            formatted_weekly_summary.append({
-                'week': week_str,
-                'path': row['path'],
-                'count': row['count']
-            })
-
-            current_week = week_str
-
-        weekly_summary = pd.DataFrame(formatted_weekly_summary)
-
-        print(f"\nWeekly page visit summary created with {len(weekly_summary)} rows")
-    else:
-        weekly_summary = pd.DataFrame(columns=['week', 'path', 'count'])
-        print("\nNo page_visit events found or no timestamp column")
-
-    return weekly_summary
-
-def getWeeklySummaryCS(page_visits):
+def getWeeklySummary(page_visits):
     if not page_visits.empty and 'timestamp' in page_visits.columns:
         # Convert timestamp to datetime
         page_visits['timestamp'] = pd.to_datetime(page_visits['timestamp'])
@@ -282,53 +255,121 @@ def getFinalCompletionCAP(page_visits):
     return final_completion
 
 def getFinalCompletionCS(page_visits):
+
     if not page_visits.empty and 'timestamp' in page_visits.columns:
-        # Filter for domestic abuse and confirmation pages
-        domestic_abuse = page_visits[page_visits['path'].str.contains('domestic-abuse', case=False, na=False)]
-        confirmation = page_visits[page_visits['path'].str.contains('confirmation', case=False, na=False)]
 
-        # Simple method: count totals per week (for unknown IDs)
-        domestic_abuse_weekly = domestic_abuse.groupby('week').size().reset_index(name='domestic_abuse_visits')
-        confirmation_weekly = confirmation.groupby('week').size().reset_index(name='confirmation_visits')
-
-        # Merge and calculate simple completion rate
-        weekly_completion = pd.merge(domestic_abuse_weekly, confirmation_weekly, on='week', how='outer').fillna(0)
-        weekly_completion['simple_completion_rate'] = (weekly_completion['confirmation_visits'] / weekly_completion['domestic_abuse_visits'] * 100).round(2)
-        weekly_completion['simple_completion_rate'] = weekly_completion['simple_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
-
-        # Advanced method: unique user completion (for known IDs)
-        # Get unique user_id + week combinations for domestic-abuse
-        domestic_check_users = domestic_abuse.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
-        # Get unique user_id + week combinations for confirmation
-        confirmation_users = confirmation.groupby(['week', 'user_id']).size().reset_index(name='count')[['week', 'user_id']]
-
-        # Mark users who reached each stage
-        domestic_check_users['reached_domestic_abuse'] = 1
-        confirmation_users['reached_confirmation'] = 1
-
-        # Merge to find users who reached both stages
-        user_completion = pd.merge(domestic_check_users, confirmation_users, on=['week', 'user_id'], how='left').fillna(0)
-
-        # Count unique users per week
-        unique_safety_check = user_completion.groupby('week')['reached_domestic_abuse'].sum().reset_index(name='unique_users_domestic_abuse')
-        unique_completed = user_completion[user_completion['reached_confirmation'] == 1].groupby('week').size().reset_index(name='unique_users_completed')
-
-        # Merge and calculate user-based completion rate
-        user_based_completion = pd.merge(unique_safety_check, unique_completed, on='week', how='outer').fillna(0)
-        user_based_completion['user_completion_rate'] = (user_based_completion['unique_users_completed'] / user_based_completion['unique_users_domestic_abuse'] * 100).round(2)
-        user_based_completion['user_completion_rate'] = user_based_completion['user_completion_rate'].replace([float('inf'), float('-inf')], 0).fillna(0)
-
-        # Combine both methods
-        final_completion = pd.merge(weekly_completion, user_based_completion, on='week', how='outer').fillna(0)
-        final_completion['week'] = final_completion['week'].astype(str)
-
-        print(f"\nWeekly completion rate created with {len(final_completion)} rows")
+        return {
+            "Getting_Help_Page_Visits": getGettingHelpFinalCompletionCS(page_visits),
+            "Parenting_Plan_Page_Visits": getParentingPlanFinalCompletionCS(page_visits),
+            "Options_No_Contact_Page_Visits": getOptionsNoContactFinalCompletionCS(page_visits),
+            "Court_Order_Page_Visits": getCourtOrderFinalCompletionCS(page_visits),
+            "Mediation_Page_Visits": getMediationFinalCompletionCS(page_visits)
+        }
 
     else:
-        final_completion = pd.DataFrame(columns=['week', 'domestic_abuse_visits', 'confirmation_visits', 'simple_completion_rate', 'unique_users_domestic_abuse', 'unique_users_completed', 'user_completion_rate'])
-        print("\nNo page_visit data for completion rate")
 
-    return final_completion
+        return {
+            "Getting_Help_Page_Visits": pd.DataFrame(columns=['week']),
+            "Parenting_Plan_Page_Visits": pd.DataFrame(columns=['week']),
+            "Options_No_Contact_Page_Visits": pd.DataFrame(columns=['week']),
+            "Court_Order_Page_Visits": pd.DataFrame(columns=['week']),
+            "Mediation_Page_Visits": pd.DataFrame(columns=['week'])
+        }
+
+def getGettingHelpFinalCompletionCS(page_visits):
+    return getFinalWeeklyCompletionCS(
+        page_visits,
+        step_name="getting_help",
+        step_pattern="getting-help"
+    )
+
+def getParentingPlanFinalCompletionCS(page_visits):
+    return getFinalWeeklyCompletionCS(
+        page_visits,
+        step_name="parenting_plan",
+        step_pattern="parenting-plan"
+    )
+
+def getOptionsNoContactFinalCompletionCS(page_visits):
+    return getFinalWeeklyCompletionCS(
+        page_visits,
+        step_name="options_no_contact",
+        step_pattern="options-no-contact"
+    )
+
+def getCourtOrderFinalCompletionCS(page_visits):
+    return getFinalWeeklyCompletionCS(
+        page_visits,
+        step_name="court_order",
+        step_pattern="court-order"
+    )
+
+def getMediationFinalCompletionCS(page_visits):
+    return getFinalWeeklyCompletionCS(
+        page_visits,
+        step_name="mediation",
+        step_pattern="mediation"
+    )
+
+def getFinalWeeklyCompletionCS(page_visits, step_name, step_pattern):
+    
+    if page_visits.empty or 'timestamp' not in page_visits.columns:
+        return pd.DataFrame(columns=[
+            'week',
+            'domestic_abuse_visits',
+            f'{step_name}_visits',
+            f'{step_name}_simple_completion_rate',
+            'unique_users_domestic_abuse',
+            f'unique_{step_name}_users_completed',
+            f'{step_name}_user_completion_rate'
+        ])
+
+    # Precompute paths once (performance win)
+    paths = page_visits['path'].str.lower()
+
+    # Step filters
+    domestic_abuse = page_visits[paths.str.contains('domestic-abuse', na=False)]
+    step_df = page_visits[paths.str.contains(step_pattern, na=False)]
+
+    # --- SIMPLE METHOD ---
+    domestic_weekly = domestic_abuse.groupby('week').size().reset_index(name='domestic_abuse_visits')
+    step_weekly = step_df.groupby('week').size().reset_index(name=f'{step_name}_visits')
+
+    weekly = pd.merge(domestic_weekly, step_weekly, on='week', how='outer').fillna(0)
+
+    weekly[f'{step_name}_simple_completion_rate'] = np.where(
+        weekly['domestic_abuse_visits'] > 0,
+        (weekly[f'{step_name}_visits'] / weekly['domestic_abuse_visits']) * 100,
+        0
+    ).round(2)
+
+    unique_domestic = (
+        domestic_abuse.groupby('week')['user_id']
+        .nunique()
+        .reset_index(name='unique_users_domestic_abuse')
+    )
+
+    unique_step_completed = (
+        step_df.groupby('week')['user_id']
+        .nunique()
+        .reset_index(name=f'unique_{step_name}_users_completed')
+    )
+
+    user_completion = pd.merge(unique_domestic, unique_step_completed, on='week', how='outer').fillna(0)
+
+    user_completion[f'{step_name}_user_completion_rate'] = np.where(
+        user_completion['unique_users_domestic_abuse'] > 0,
+        (user_completion[f'unique_{step_name}_users_completed'] / user_completion['unique_users_domestic_abuse']) * 100,
+        0
+    ).round(2)
+
+    # --- FINAL MERGE ---
+    final = pd.merge(weekly, user_completion, on='week', how='outer').fillna(0)
+    final['week'] = final['week'].astype(str)
+
+    print(f"\n{step_name} completion rate created with {len(final)} rows")
+
+    return final
 
 def getOutputFile(systemSelection):
     if int(systemSelection) == 1:
