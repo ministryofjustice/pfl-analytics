@@ -15,7 +15,7 @@ timestamp=2024-11-13T10:30:00Z, event_type=page_visit, user_id=user123, path=/da
 ## Usage
 1. Copy your log export files (`.xlsx` or `.csv`) into this directory
 2. Run either:
-   - **Dashboard**: `streamlit run dashboard.py`
+   - **Dashboard**: `streamlit run app.py`
    - **Batch Processing**: `python main.py`
 
 ## Note
