@@ -1,14 +1,12 @@
 # Use official Python image
 FROM python:3.11-slim
 
+# Set working directory
+WORKDIR /app
+
 # Prevent Python from writing .pyc files & enable stdout logging
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements for caching
 COPY requirements.txt .
@@ -17,6 +15,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
-COPY . .
+COPY app.py .
+COPY src/ ./src/
 
-CMD ["python", "app.py", ]
+RUN mkdir -p input output
+
+CMD ["streamlit", "run", "app.py", "server.address=0.0.0.0", "server. Port=8501"]
