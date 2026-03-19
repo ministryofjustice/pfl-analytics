@@ -1,5 +1,6 @@
 """Main data processing orchestration."""
 import pandas as pd
+from .opensearch_client import fetch_all_events
 from .parser import parse_log_data
 from .metrics import (
     calculate_weekly_page_visits,
@@ -55,15 +56,25 @@ def process_dataframe(df):
     }
 
 
-def load_log_file(file_path):
-    """Read and parse a log file, returning a raw DataFrame."""
-    if file_path.endswith('.csv'):
-        df_raw = pd.read_csv(file_path)
-    else:
-        df_raw = pd.read_excel(file_path)
-    return parse_log_data(df_raw)
+def fetch_services(services, start_date=None, end_date=None):
+    """Fetch and combine raw DataFrames from one or more OpenSearch services.
 
+    Args:
+        services: List of {name, url, index} dicts (from sidebar config)
+        start_date: Optional start of date range
+        end_date: Optional end of date range
 
-def process_log_file(file_path):
-    """Convenience wrapper: load and process a log file in one step."""
-    return process_dataframe(load_log_file(file_path))
+    Returns:
+        Combined DataFrame with a 'service' column tagging each row.
+    """
+    frames = [
+        fetch_all_events(
+            proxy_url=svc['url'],
+            index=svc['index'],
+            start_date=start_date,
+            end_date=end_date,
+            service_name=svc['name'],
+        )
+        for svc in services
+    ]
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()

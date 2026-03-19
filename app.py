@@ -7,7 +7,7 @@ import sys
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from data_processing import load_log_file, process_dataframe, fetch_all_events
+from data_processing import process_dataframe, fetch_services, parse_log_data
 from utils.file_utils import create_excel_download
 from components.sidebar import display_data_source_selector, display_download_section
 from components.metrics_display import display_key_metrics
@@ -46,7 +46,8 @@ if 'raw_df' not in st.session_state:
         try:
             if active_config['source'] == 'file':
                 file_path = input_dir / active_config['selected_file']
-                raw_df = load_log_file(str(file_path))
+                df_raw = pd.read_csv(file_path) if str(file_path).endswith('.csv') else pd.read_excel(file_path)
+                raw_df = parse_log_data(df_raw)
                 st.session_state['raw_label'] = active_config['selected_file']
             else:
                 services = active_config.get('services', [])
@@ -55,18 +56,8 @@ if 'raw_df' not in st.session_state:
                     st.stop()
 
                 start_date, end_date = (active_config['date_range'] or (None, None))
-                frames = []
-                for svc in services:
-                    frames.append(fetch_all_events(
-                        proxy_url=svc['url'],
-                        index=svc['index'],
-                        start_date=start_date,
-                        end_date=end_date,
-                        service_name=svc['name'],
-                    ))
-                raw_df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-                service_names = [s['name'] for s in services]
-                st.session_state['raw_label'] = ', '.join(service_names)
+                raw_df = fetch_services(services, start_date=start_date, end_date=end_date)
+                st.session_state['raw_label'] = ', '.join(s['name'] for s in services)
 
             st.session_state['raw_df'] = raw_df
         except Exception as e:
