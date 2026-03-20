@@ -1,5 +1,6 @@
 """Main data processing orchestration."""
 import pandas as pd
+import streamlit as st
 from .opensearch_client import fetch_all_events
 from .parser import parse_log_data
 from .metrics import (
@@ -67,6 +68,7 @@ def process_dataframe(df):
     }
 
 
+@st.cache_data(ttl=300, hash_funcs={list: lambda x: str(x)})
 def fetch_services(services, start_date=None, end_date=None):
     """Fetch and combine raw DataFrames from one or more OpenSearch services.
 
