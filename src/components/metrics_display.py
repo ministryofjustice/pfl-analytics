@@ -2,7 +2,7 @@
 import streamlit as st
 
 
-def display_key_metrics(df, page_visits, completion_rate):
+def display_key_metrics(df, page_visits, completion_rate, completion_rate_cs=None):
     """Display key metrics section."""
     st.header("📈 Key Metrics")
 
@@ -34,7 +34,16 @@ def display_key_metrics(df, page_visits, completion_rate):
     with col4:
         if not completion_rate.empty and 'user_completion_rate' in completion_rate.columns:
             avg_completion = completion_rate['user_completion_rate'].mean()
-            st.metric("Avg Completion Rate", f"{avg_completion:.1f}%")
+            st.metric("Avg Completion Rate (CAP)", f"{avg_completion:.1f}%")
+        elif completion_rate_cs:
+            # Average the user completion rate across all CS journeys
+            rates = [
+                df[f'{step}_user_completion_rate'].mean()
+                for step, df in completion_rate_cs.items()
+                if f'{step}_user_completion_rate' in df.columns and not df.empty
+            ]
+            avg_cs = sum(rates) / len(rates) if rates else 0
+            st.metric("Avg Completion Rate (CS)", f"{avg_cs:.1f}%")
         else:
             st.metric("Avg Completion Rate", "N/A")
 

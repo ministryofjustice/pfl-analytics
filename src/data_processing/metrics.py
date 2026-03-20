@@ -1,6 +1,17 @@
 """Metrics calculation functions."""
+import numpy as np
 import pandas as pd
 from .constants import PAGE_ORDER, PAGE_NAMES, PAGE_ORDER_CS, PAGE_NAMES_CS
+
+
+# CS journeys: (step_name used in column names, url pattern to match)
+CS_JOURNEY_STEPS = [
+    ('getting_help', 'getting-help'),
+    ('parenting_plan', 'parenting-plan'),
+    ('options_no_contact', 'options-no-contact'),
+    ('court_order', 'court-order'),
+    ('mediation', 'mediation'),
+]
 
 
 def calculate_weekly_page_visits(df):
@@ -75,6 +86,67 @@ def calculate_completion_rate(page_visits):
     final_completion['week'] = final_completion['week'].astype(str)
 
     return final_completion
+
+
+def calculate_completion_rate_cs(page_visits):
+    """Calculate weekly completion rates for each Connecting Services journey.
+
+    Each journey uses domestic-abuse as the entry point and a specific step
+    as the completion point, mirroring getFinalCompletionCS in main.py.
+
+    Returns a dict of {step_name: DataFrame}, one entry per journey step.
+    """
+    empty = {
+        step_name: pd.DataFrame(columns=[
+            'week', 'domestic_abuse_visits', f'{step_name}_visits',
+            f'{step_name}_simple_completion_rate', 'unique_users_domestic_abuse',
+            f'unique_{step_name}_users_completed', f'{step_name}_user_completion_rate',
+        ])
+        for step_name, _ in CS_JOURNEY_STEPS
+    }
+
+    if page_visits.empty or 'timestamp' not in page_visits.columns:
+        return empty
+
+    paths = page_visits['path'].str.lower()
+    domestic_abuse = page_visits[paths.str.contains('domestic-abuse', na=False)]
+    domestic_weekly = domestic_abuse.groupby('week').size().reset_index(name='domestic_abuse_visits')
+    unique_domestic = (
+        domestic_abuse.groupby('week')['user_id']
+        .nunique()
+        .reset_index(name='unique_users_domestic_abuse')
+    )
+
+    result = {}
+    for step_name, step_pattern in CS_JOURNEY_STEPS:
+        step_df = page_visits[paths.str.contains(step_pattern, na=False)]
+        step_weekly = step_df.groupby('week').size().reset_index(name=f'{step_name}_visits')
+
+        weekly = pd.merge(domestic_weekly, step_weekly, on='week', how='outer').fillna(0)
+        weekly[f'{step_name}_simple_completion_rate'] = np.where(
+            weekly['domestic_abuse_visits'] > 0,
+            (weekly[f'{step_name}_visits'] / weekly['domestic_abuse_visits']) * 100,
+            0
+        ).round(2)
+
+        unique_step = (
+            step_df.groupby('week')['user_id']
+            .nunique()
+            .reset_index(name=f'unique_{step_name}_users_completed')
+        )
+
+        user_completion = pd.merge(unique_domestic, unique_step, on='week', how='outer').fillna(0)
+        user_completion[f'{step_name}_user_completion_rate'] = np.where(
+            user_completion['unique_users_domestic_abuse'] > 0,
+            (user_completion[f'unique_{step_name}_users_completed'] / user_completion['unique_users_domestic_abuse']) * 100,
+            0
+        ).round(2)
+
+        final = pd.merge(weekly, user_completion, on='week', how='outer').fillna(0)
+        final['week'] = final['week'].astype(str)
+        result[step_name] = final
+
+    return result
 
 
 def calculate_per_page_completion_rate(page_visits, page_order=None):
