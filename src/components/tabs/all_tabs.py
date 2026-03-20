@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-def display_all_tabs(df, weekly_summary, completion_rate, filtered_page_visits, per_page_completion, funnel_data):
+def display_all_tabs(df, weekly_summary, completion_rate, filtered_page_visits, per_page_completion, funnel_data, completion_rate_cs=None):
     """Display all dashboard tabs with their content."""
 
     tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
@@ -26,7 +26,7 @@ def display_all_tabs(df, weekly_summary, completion_rate, filtered_page_visits, 
         _display_page_visits(filtered_page_visits)
 
     with tab3:
-        _display_completion_rates(completion_rate, per_page_completion, funnel_data)
+        _display_completion_rates(completion_rate, per_page_completion, funnel_data, completion_rate_cs)
 
     with tab4:
         _display_link_clicks(df)
@@ -147,7 +147,52 @@ def _display_page_visits(filtered_page_visits):
         st.info("No page visit data available for the selected date range")
 
 
-def _display_completion_rates(completion_rate, per_page_completion, funnel_data):
+_CS_JOURNEY_LABELS = {
+    'getting_help': 'Getting Help',
+    'parenting_plan': 'Parenting Plan',
+    'options_no_contact': 'Options (No Contact)',
+    'court_order': 'Court Order',
+    'mediation': 'Mediation',
+}
+
+
+def _display_cs_journey(step_name, journey_df):
+    """Display completion rate chart and table for one CS journey step."""
+    label = _CS_JOURNEY_LABELS.get(step_name, step_name.replace('_', ' ').title())
+    rate_col = f'{step_name}_user_completion_rate'
+    simple_col = f'{step_name}_simple_completion_rate'
+
+    if journey_df.empty or rate_col not in journey_df.columns:
+        st.info(f"No data for {label}")
+        return
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=journey_df['week'],
+        y=journey_df[simple_col],
+        mode='lines+markers',
+        name='Simple Completion Rate',
+        line=dict(color='lightblue', width=3)
+    ))
+    fig.add_trace(go.Scatter(
+        x=journey_df['week'],
+        y=journey_df[rate_col],
+        mode='lines+markers',
+        name='User-Based Completion Rate',
+        line=dict(color='darkblue', width=3)
+    ))
+    fig.update_layout(
+        title=f'{label} — Completion Rate Over Time',
+        xaxis_title='Week',
+        yaxis_title='Completion Rate (%)',
+        height=350,
+        hovermode='x unified'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.dataframe(journey_df, use_container_width=True)
+
+
+def _display_completion_rates(completion_rate, per_page_completion, funnel_data, completion_rate_cs=None):
     """Display completion rate analysis tab."""
     st.header("Completion Rate Analysis")
 
@@ -285,7 +330,17 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data)
                 funnel_display['completion_rate'] = funnel_display['completion_rate'].apply(lambda x: f"{x:.1f}%")
 
             st.dataframe(funnel_display, use_container_width=True)
-    else:
+
+    # Connecting Services completion rates (one section per journey)
+    if completion_rate_cs:
+        st.divider()
+        st.subheader("Connecting Services — Journey Completion Rates")
+        for step_name, journey_df in completion_rate_cs.items():
+            label = _CS_JOURNEY_LABELS.get(step_name, step_name.replace('_', ' ').title())
+            with st.expander(label):
+                _display_cs_journey(step_name, journey_df)
+
+    if completion_rate.empty and not completion_rate_cs:
         st.info("No completion rate data available")
 
 

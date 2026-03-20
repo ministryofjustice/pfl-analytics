@@ -5,6 +5,7 @@ from .parser import parse_log_data
 from .metrics import (
     calculate_weekly_page_visits,
     calculate_completion_rate,
+    calculate_completion_rate_cs,
     calculate_per_page_completion_rate,
     calculate_funnel_data
 )
@@ -21,7 +22,16 @@ SERVICE_PAGE_ORDERS = {
 def process_dataframe(df):
     """Run the metrics pipeline on an already-parsed DataFrame."""
     weekly_summary, page_visits = calculate_weekly_page_visits(df)
-    final_completion = calculate_completion_rate(page_visits)
+
+    # Completion rates are journey-specific — route by service
+    if 'service' in page_visits.columns:
+        cap_visits = page_visits[page_visits['service'] == 'CAP']
+        cs_visits = page_visits[page_visits['service'] == 'Connecting Services']
+        final_completion = calculate_completion_rate(cap_visits) if not cap_visits.empty else pd.DataFrame()
+        completion_rate_cs = calculate_completion_rate_cs(cs_visits) if not cs_visits.empty else None
+    else:
+        final_completion = calculate_completion_rate(page_visits)
+        completion_rate_cs = None
 
     # Per-page and funnel metrics are journey-specific, so split by service
     # when multiple services are present to use the correct page order for each.
@@ -50,9 +60,10 @@ def process_dataframe(df):
         'parsed_data': df,
         'weekly_summary': weekly_summary,
         'completion_rate': final_completion,
+        'completion_rate_cs': completion_rate_cs,
         'page_visits': page_visits,
         'per_page_completion': per_page_completion,
-        'funnel_data': funnel_data
+        'funnel_data': funnel_data,
     }
 
 

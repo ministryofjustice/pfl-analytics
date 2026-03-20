@@ -48,6 +48,7 @@ if 'raw_df' not in st.session_state:
                 file_path = input_dir / active_config['selected_file']
                 df_raw = pd.read_csv(file_path) if str(file_path).endswith('.csv') else pd.read_excel(file_path)
                 raw_df = parse_log_data(df_raw)
+                raw_df['service'] = active_config['service_name']
                 st.session_state['raw_label'] = active_config['selected_file']
             else:
                 services = active_config.get('services', [])
@@ -91,12 +92,13 @@ st.success(f"✅ {len(data['parsed_data'])} records loaded")
 df = data['parsed_data']
 weekly_summary = data['weekly_summary']
 completion_rate = data['completion_rate']
+completion_rate_cs = data['completion_rate_cs']
 page_visits = data['page_visits']
 per_page_completion = data['per_page_completion']
 funnel_data = data['funnel_data']
 
 # Display key metrics
-display_key_metrics(df, page_visits, completion_rate)
+display_key_metrics(df, page_visits, completion_rate, completion_rate_cs)
 
 # Download section in sidebar
 display_download_section(
@@ -105,7 +107,7 @@ display_download_section(
 )
 
 # Display all tabs
-display_all_tabs(df, weekly_summary, completion_rate, page_visits, per_page_completion, funnel_data)
+display_all_tabs(df, weekly_summary, completion_rate, page_visits, per_page_completion, funnel_data, completion_rate_cs)
 
 # Footer
 st.divider()

@@ -44,8 +44,14 @@ def display_data_source_selector(input_dir):
             help="Choose a log file to analyse"
         )
 
+        service_name = st.sidebar.radio(
+            "Service",
+            options=[svc['name'] for svc in SERVICES],
+            help="Which service does this log file belong to?"
+        )
+
         load = st.sidebar.button("Load Data", type="primary")
-        return {'source': 'file', 'selected_file': selected_file, 'load': load}
+        return {'source': 'file', 'selected_file': selected_file, 'service_name': service_name, 'load': load}
 
     else:  # OpenSearch
         st.sidebar.markdown("**Service connections**")
