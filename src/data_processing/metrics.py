@@ -1,7 +1,7 @@
 """Metrics calculation functions."""
 import numpy as np
 import pandas as pd
-from .constants import PAGE_ORDER, PAGE_NAMES, PAGE_ORDER_CS, PAGE_NAMES_CS
+from .constants import PAGE_ORDER, PAGE_NAMES
 
 
 # CS journeys: (step_name used in column names, url pattern to match)
