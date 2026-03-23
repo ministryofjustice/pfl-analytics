@@ -16,8 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY app.py .
+COPY config.py .
 COPY src/ ./src/
 
 RUN mkdir -p input output
 
-CMD ["streamlit", "run", "app.py", "server.address=0.0.0.0", "server. Port=8501"]
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
