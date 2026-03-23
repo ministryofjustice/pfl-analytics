@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${KUBE_NAMESPACE}-deployment
+  namespace: ${KUBE_NAMESPACE}
+  labels:
+    app: ${KUBE_NAMESPACE}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  selector:
+    matchLabels:
+      app: ${KUBE_NAMESPACE}
+  template:
+    metadata:
+      labels:
+        app: ${KUBE_NAMESPACE}
+    spec:
+      terminationGracePeriodSeconds: 35
+      serviceAccountName: cd-serviceaccount
+      containers:
+        - name: analytics
+          image: ${ECR_URL}:${IMAGE_TAG}
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+          ports:
+            - containerPort: 8501
+              name: http
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: CAP_OPENSEARCH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: analytics-secrets
+                  key: cap-opensearch-url

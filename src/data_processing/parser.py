@@ -2,6 +2,25 @@
 import pandas as pd
 import re
 
+# Maximum log entry length — entries beyond this are skipped as malformed/malicious
+MAX_LOG_ENTRY_LENGTH = 2000
+
+# Compiled patterns with bounded quantifiers to prevent ReDoS.
+# The upper bound on each capture group limits worst-case backtracking.
+_PATTERNS = {
+    'timestamp':     re.compile(r'timestamp=([^,\)]{1,50})'),
+    'event_type':    re.compile(r'event_type=([^,\)]{1,30})'),
+    'user_id':       re.compile(r'user_id=([^,\)]{1,100})'),
+    'path':          re.compile(r'path=([^,\)]{1,500})'),
+    'exit_page':     re.compile(r'exit_page=([^,\)]{1,500})'),
+    'method':        re.compile(r'method=([^,\)]{1,10})'),
+    'status_code':   re.compile(r'status_code=([^,\)]{1,3})'),
+    'download_type': re.compile(r'download_type=([^,\)]{1,50})'),
+    'link_url':      re.compile(r'link_url=([^,\)]{1,500})'),
+    'link_type':     re.compile(r'link_type=([^,\)]{1,50})'),
+    'page':          re.compile(r'(?<!\w)page=([^,\)]{1,500})'),
+}
+
 
 def parse_log_data(df_raw):
     """Parse raw log data into structured format."""
@@ -17,18 +36,22 @@ def parse_log_data(df_raw):
     for idx, row in df_raw.iterrows():
         log_entry = str(row.iloc[0])
 
-        # Extract fields using regex
-        timestamp_match = re.search(r'timestamp=([^,\)]+)', log_entry)
-        event_type_match = re.search(r'event_type=([^,\)]+)', log_entry)
-        user_id_match = re.search(r'user_id=([^,\)]+)', log_entry)
-        path_match = re.search(r'path=([^,\)]+)', log_entry)
-        exit_page_match = re.search(r'exit_page=([^,\)]+)', log_entry)
-        method_match = re.search(r'method=([^,\)]+)', log_entry)
-        status_code_match = re.search(r'status_code=([^,\)]+)', log_entry)
-        download_type_match = re.search(r'download_type=([^,\)]+)', log_entry)
-        link_url_match = re.search(r'link_url=([^,\)]+)', log_entry)
-        link_type_match = re.search(r'link_type=([^,\)]+)', log_entry)
-        page_match = re.search(r'(?<!\w)page=([^,\)]+)', log_entry)
+        # Skip entries that exceed the maximum length
+        if len(log_entry) > MAX_LOG_ENTRY_LENGTH:
+            continue
+
+        # Extract fields using pre-compiled patterns
+        timestamp_match = _PATTERNS['timestamp'].search(log_entry)
+        event_type_match = _PATTERNS['event_type'].search(log_entry)
+        user_id_match = _PATTERNS['user_id'].search(log_entry)
+        path_match = _PATTERNS['path'].search(log_entry)
+        exit_page_match = _PATTERNS['exit_page'].search(log_entry)
+        method_match = _PATTERNS['method'].search(log_entry)
+        status_code_match = _PATTERNS['status_code'].search(log_entry)
+        download_type_match = _PATTERNS['download_type'].search(log_entry)
+        link_url_match = _PATTERNS['link_url'].search(log_entry)
+        link_type_match = _PATTERNS['link_type'].search(log_entry)
+        page_match = _PATTERNS['page'].search(log_entry)
 
         # Get path and event_type values (use 'page' as fallback for 'path')
         path_value = path_match.group(1) if path_match else (page_match.group(1) if page_match else None)
@@ -69,7 +92,6 @@ def parse_log_data(df_raw):
 
     # Remove rows where user_id is blank, None, 'unknown', or 'anonymous'
     if not df.empty:
-        original_count = len(df)
         df = df[df['user_id'].notna()]  # Remove None/NaN
         df = df[df['user_id'].str.strip() != '']  # Remove blank strings
         df = df[~df['user_id'].str.lower().isin(['unknown', 'anonymous'])]  # Remove 'unknown' or 'anonymous'

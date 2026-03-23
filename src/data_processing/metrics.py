@@ -1,7 +1,7 @@
 """Metrics calculation functions."""
 import numpy as np
 import pandas as pd
-from .constants import PAGE_ORDER, PAGE_NAMES, PAGE_ORDER_CS, PAGE_NAMES_CS
+from .constants import PAGE_ORDER, PAGE_NAMES
 
 
 # CS journeys: (step_name used in column names, url pattern to match)
@@ -165,27 +165,22 @@ def calculate_per_page_completion_rate(page_visits, page_order=None):
     # Deduplicate page visits globally - keep only first visit per user-page combination
     deduplicated_visits = page_visits.sort_values('timestamp').drop_duplicates(subset=['user_id', 'path'], keep='first')
 
-    # Calculate weekly stats per page
+    # Calculate weekly stats per page using deduplicated data throughout
     results = []
 
-    # Get all weeks from both original and deduplicated data
-    all_weeks = sorted(page_visits['week'].unique())
+    all_weeks = sorted(deduplicated_visits['week'].unique())
 
     for week in all_weeks:
-        # Use original data for total visits count
-        week_data_raw = page_visits[page_visits['week'] == week]
-        # Use deduplicated data for unique users count
-        week_data_dedup = deduplicated_visits[deduplicated_visits['week'] == week]
+        week_data = deduplicated_visits[deduplicated_visits['week'] == week]
 
         for page in page_order:
-            page_data_raw = week_data_raw[week_data_raw['path'] == page]
-            page_data_dedup = week_data_dedup[week_data_dedup['path'] == page]
+            page_data = week_data[week_data['path'] == page]
 
             results.append({
                 'week': week,
                 'page': page,
-                'total_visits': len(page_data_raw),
-                'unique_users': page_data_dedup['user_id'].nunique() if not page_data_dedup.empty else 0
+                'total_visits': len(page_data),
+                'unique_users': page_data['user_id'].nunique() if not page_data.empty else 0
             })
 
     per_page_df = pd.DataFrame(results)

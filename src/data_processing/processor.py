@@ -2,7 +2,6 @@
 import pandas as pd
 import streamlit as st
 from .opensearch_client import fetch_all_events
-from .parser import parse_log_data
 from .metrics import (
     calculate_weekly_page_visits,
     calculate_completion_rate,

@@ -16,5 +16,6 @@ __all__ = [
     'calculate_per_page_completion_rate',
     'calculate_funnel_data',
     'process_dataframe',
+    'fetch_services',
     'fetch_all_events',
 ]
