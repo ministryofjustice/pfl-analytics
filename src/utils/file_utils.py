@@ -1,6 +1,70 @@
 """File handling utilities."""
+import logging
 import pandas as pd
 from io import BytesIO
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
+
+# Magic-byte signatures for binary formats
+_MAGIC_BYTES = {
+    'xlsx': b'PK\x03\x04',        # ZIP-based Office Open XML
+    'xls':  b'\xD0\xCF\x11\xE0',  # OLE2 Compound Document
+}
+
+
+def validate_file(file_path) -> None:
+    """Validate a file's size and content before processing.
+
+    Raises ValueError with a safe, user-facing message if the file fails
+    validation.  The original details are written to the application log so
+    they are visible to operators without being exposed to end-users.
+    """
+    path = Path(file_path)
+    suffix = path.suffix.lower().lstrip('.')
+
+    # --- size check ---
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        logger.error("Could not stat file %s: %s", path, exc)
+        raise ValueError("The selected file could not be read.") from exc
+
+    if size == 0:
+        raise ValueError("The selected file is empty.")
+    if size > MAX_FILE_SIZE_BYTES:
+        logger.warning("File %s rejected: size %d bytes exceeds limit", path, size)
+        raise ValueError("File exceeds the maximum allowed size of 100 MB.")
+
+    # --- magic-byte / content-type check ---
+    try:
+        with open(path, 'rb') as fh:
+            header = fh.read(512)
+    except OSError as exc:
+        logger.error("Could not read file %s: %s", path, exc)
+        raise ValueError("The selected file could not be read.") from exc
+
+    if suffix in _MAGIC_BYTES:
+        expected = _MAGIC_BYTES[suffix]
+        if not header[:len(expected)] == expected:
+            logger.warning(
+                "File %s has extension .%s but unexpected magic bytes %s",
+                path, suffix, header[:4].hex()
+            )
+            raise ValueError("File content does not match its declared type.")
+    elif suffix == 'csv':
+        # CSV must be decodable as UTF-8 or Latin-1 text
+        for encoding in ('utf-8', 'latin-1'):
+            try:
+                header.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            logger.warning("File %s rejected: not valid text content", path)
+            raise ValueError("CSV file does not appear to contain valid text data.")
 
 
 def create_excel_download(dataframes_dict):

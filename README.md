@@ -104,6 +104,32 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Environment Variables
+
+Copy `.env.example` to `.env` and adjust the values for your setup:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `ALLOW_FILE_UPLOAD` | unset | Set to `true` locally to enable the File source option. Leave unset in production. |
+| `CAP_PROXY_URL` | `http://localhost:8080` | URL for the CAP OpenSearch proxy |
+| `CS_PROXY_URL` | `http://localhost:8081` | URL for the Connecting Services OpenSearch proxy |
+
+**Local development** (file upload enabled):
+```bash
+ALLOW_FILE_UPLOAD=true streamlit run app.py
+```
+
+**Production** (OpenSearch only — no file option shown to users):
+```bash
+streamlit run app.py
+```
+
+> `.env` is gitignored. Never commit real URLs or secrets.
+
 ## Usage
 
 ### Running the Dashboard
@@ -144,6 +170,28 @@ python tests/test_data_processor.py -v
 # Run specific test class
 python -m unittest tests.test_data_processor.TestPageVisitDeduplication
 ```
+
+### Linting
+
+Install dev dependencies first:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Run ruff:
+
+```bash
+ruff check src/ app.py config.py
+```
+
+Auto-fix where possible:
+
+```bash
+ruff check --fix src/ app.py config.py
+```
+
+Linting also runs automatically on every pull request via GitHub Actions.
 
 ## Architecture
 
