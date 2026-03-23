@@ -14,11 +14,16 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create non-root user
+RUN useradd --create-home appuser
+
 # Copy project files
 COPY app.py .
 COPY config.py .
 COPY src/ ./src/
 
-RUN mkdir -p input output
+RUN mkdir -p input output && chown -R appuser /app
+
+USER appuser
 
 CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
