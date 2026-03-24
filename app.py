@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 from data_processing import process_dataframe, fetch_services, parse_log_data  # noqa: E402
 from utils.file_utils import create_excel_download, validate_file  # noqa: E402
+from utils.audit_log import log_event  # noqa: E402
 from components.sidebar import display_data_source_selector, display_download_section  # noqa: E402
 from components.metrics_display import display_key_metrics  # noqa: E402
 from components.tabs import display_all_tabs  # noqa: E402
@@ -35,6 +36,7 @@ def _check_rate_limit() -> None:
     # Discard entries outside the rolling window
     history[:] = [t for t in history if now - t < _RATE_LIMIT_WINDOW]
     if len(history) >= _RATE_LIMIT_MAX:
+        log_event("rate_limit_hit", loads_in_window=len(history), window_seconds=_RATE_LIMIT_WINDOW)
         raise RuntimeError(
             "Too many requests. Please wait before loading more data."
         )
@@ -84,6 +86,8 @@ if 'raw_df' not in st.session_state:
                 raw_df = parse_log_data(df_raw)
                 raw_df['service'] = active_config['service_name']
                 st.session_state['raw_label'] = active_config['selected_file']
+                log_event("data_loaded", source="file", service=active_config['service_name'],
+                          rows=len(raw_df))
             else:
                 services = active_config.get('services', [])
                 if not services:
@@ -93,6 +97,10 @@ if 'raw_df' not in st.session_state:
                 start_date, end_date = (active_config['date_range'] or (None, None))
                 raw_df = fetch_services(services, start_date=start_date, end_date=end_date)
                 st.session_state['raw_label'] = ', '.join(s['name'] for s in services)
+                log_event("data_loaded", source="opensearch",
+                          services=[s['name'] for s in services],
+                          date_from=str(start_date), date_to=str(end_date),
+                          rows=len(raw_df))
 
             st.session_state['raw_df'] = raw_df
         except (ValueError, RuntimeError) as e:
@@ -101,6 +109,7 @@ if 'raw_df' not in st.session_state:
             st.stop()
         except Exception:
             logger.exception("Unexpected error while loading data")
+            log_event("error", kind="data_load_failure", source=active_config.get('source'))
             st.error("An unexpected error occurred while loading the data. Please try again or contact support.")
             st.stop()
 

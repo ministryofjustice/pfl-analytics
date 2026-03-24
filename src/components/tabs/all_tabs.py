@@ -62,7 +62,7 @@ def _display_weekly_overview(weekly_summary):
             color_continuous_scale='Blues'
         )
         fig_weekly.update_layout(height=400)
-        st.plotly_chart(fig_weekly, use_container_width=True)
+        st.plotly_chart(fig_weekly, width='stretch')
 
         # Top pages per week
         st.subheader("Top Pages by Week")
@@ -81,7 +81,7 @@ def _display_weekly_overview(weekly_summary):
                     labels={'count': 'Visits', 'path': 'Page Path'}
                 )
                 fig_top.update_layout(height=300)
-                st.plotly_chart(fig_top, use_container_width=True)
+                st.plotly_chart(fig_top, width='stretch')
     else:
         st.info("No page visit data available")
 
@@ -109,7 +109,7 @@ def _display_page_visits(filtered_page_visits):
                 color_continuous_scale='Viridis'
             )
             fig_pages.update_layout(height=400, showlegend=False)
-            st.plotly_chart(fig_pages, use_container_width=True)
+            st.plotly_chart(fig_pages, width='stretch')
 
         with col2:
             st.subheader("Visits Over Time")
@@ -124,7 +124,7 @@ def _display_page_visits(filtered_page_visits):
                 markers=True
             )
             fig_timeline.update_layout(height=400)
-            st.plotly_chart(fig_timeline, use_container_width=True)
+            st.plotly_chart(fig_timeline, width='stretch')
 
         # Path selector for detailed view
         st.subheader("Page Detail View")
@@ -188,8 +188,8 @@ def _display_cs_journey(step_name, journey_df):
         height=350,
         hovermode='x unified'
     )
-    st.plotly_chart(fig, use_container_width=True)
-    st.dataframe(journey_df, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
+    st.dataframe(journey_df, width='stretch')
 
 
 def _display_completion_rates(completion_rate, per_page_completion, funnel_data, completion_rate_cs=None):
@@ -223,7 +223,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
             height=400,
             hovermode='x unified'
         )
-        st.plotly_chart(fig_completion, use_container_width=True)
+        st.plotly_chart(fig_completion, width='stretch')
 
         # Detailed metrics
         st.subheader("Weekly Breakdown")
@@ -244,7 +244,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
             'User Completion Rate'
         ]
 
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(display_df, width='stretch')
 
         # Per-page completion rates
         st.subheader("Per-Page Completion Rates")
@@ -268,7 +268,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
                 page_summary = per_page_completion[per_page_completion['week'] == selected_week]
 
             # Display as a table
-            st.dataframe(page_summary, use_container_width=True)
+            st.dataframe(page_summary, width='stretch')
 
             # Visualize as bar chart
             col1, col2 = st.columns(2)
@@ -284,7 +284,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
                     color_continuous_scale='Blues'
                 )
                 fig_visits.update_layout(height=400, xaxis_tickangle=-45)
-                st.plotly_chart(fig_visits, use_container_width=True)
+                st.plotly_chart(fig_visits, width='stretch')
 
             with col2:
                 fig_users = px.bar(
@@ -297,7 +297,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
                     color_continuous_scale='Greens'
                 )
                 fig_users.update_layout(height=400, xaxis_tickangle=-45)
-                st.plotly_chart(fig_users, use_container_width=True)
+                st.plotly_chart(fig_users, width='stretch')
 
         # Funnel visualization
         st.subheader("Conversion Funnel")
@@ -318,7 +318,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
                 height=600,
                 title='User Journey Funnel (Unique Users)'
             )
-            st.plotly_chart(fig_funnel, use_container_width=True)
+            st.plotly_chart(fig_funnel, width='stretch')
 
             # Show the funnel data table
             st.subheader("Funnel Data")
@@ -329,7 +329,7 @@ def _display_completion_rates(completion_rate, per_page_completion, funnel_data,
                 funnel_display['completion_rate'] = (funnel_display['unique_users'] / funnel_display['unique_users'].iloc[0] * 100).round(2)
                 funnel_display['completion_rate'] = funnel_display['completion_rate'].apply(lambda x: f"{x:.1f}%")
 
-            st.dataframe(funnel_display, use_container_width=True)
+            st.dataframe(funnel_display, width='stretch')
 
     # Connecting Services completion rates (one section per journey)
     if completion_rate_cs:
@@ -383,7 +383,7 @@ def _display_link_clicks(df):
                 markers=True
             )
             fig_clicks_timeline.update_layout(height=400)
-            st.plotly_chart(fig_clicks_timeline, use_container_width=True)
+            st.plotly_chart(fig_clicks_timeline, width='stretch')
 
         # Link type breakdown
         if 'link_type' in link_clicks.columns:
@@ -404,7 +404,7 @@ def _display_link_clicks(df):
                         names='Link Type',
                         title='Link Click Distribution by Type'
                     )
-                    st.plotly_chart(fig_link_type, use_container_width=True)
+                    st.plotly_chart(fig_link_type, width='stretch')
 
         # Most clicked links
         st.subheader("Most Clicked Links")
@@ -428,7 +428,7 @@ def _display_link_clicks(df):
                 color_continuous_scale='Purples'
             )
             fig_top_links.update_layout(height=400, showlegend=False)
-            st.plotly_chart(fig_top_links, use_container_width=True)
+            st.plotly_chart(fig_top_links, width='stretch')
         else:
             st.info("No link URL data found. Check that log entries contain a 'link_url' field.")
 
@@ -454,7 +454,7 @@ def _display_link_clicks(df):
                 color_continuous_scale='Blues'
             )
             fig_clicks_path.update_layout(height=400, showlegend=False)
-            st.plotly_chart(fig_clicks_path, use_container_width=True)
+            st.plotly_chart(fig_clicks_path, width='stretch')
         else:
             st.info("No page path data found for link click events.")
     else:
@@ -500,7 +500,7 @@ def _display_page_exits(df):
                 markers=True
             )
             fig_exits_timeline.update_layout(height=400)
-            st.plotly_chart(fig_exits_timeline, use_container_width=True)
+            st.plotly_chart(fig_exits_timeline, width='stretch')
 
         # Most common exit pages
         if 'exit_page' in page_exits.columns:
@@ -519,7 +519,7 @@ def _display_page_exits(df):
                 color_continuous_scale='Reds'
             )
             fig_exits_path.update_layout(height=400, showlegend=False)
-            st.plotly_chart(fig_exits_path, use_container_width=True)
+            st.plotly_chart(fig_exits_path, width='stretch')
     else:
         st.info("No page exit data available")
 
@@ -563,7 +563,7 @@ def _display_quick_exits(df):
                 markers=True
             )
             fig_quick_timeline.update_layout(height=400)
-            st.plotly_chart(fig_quick_timeline, use_container_width=True)
+            st.plotly_chart(fig_quick_timeline, width='stretch')
 
         # Most common quick exit pages
         if 'exit_page' in quick_exits.columns:
@@ -584,7 +584,7 @@ def _display_quick_exits(df):
                 color_continuous_scale='Oranges'
             )
             fig_quick_path.update_layout(height=400, showlegend=False)
-            st.plotly_chart(fig_quick_path, use_container_width=True)
+            st.plotly_chart(fig_quick_path, width='stretch')
     else:
         st.info("No quick exit data available")
 
@@ -628,7 +628,7 @@ def _display_downloads(df):
                     names='Download Type',
                     title='Distribution of Download Types'
                 )
-                st.plotly_chart(fig_download_pie, use_container_width=True)
+                st.plotly_chart(fig_download_pie, width='stretch')
 
             with col2:
                 fig_download_bar = px.bar(
@@ -639,7 +639,7 @@ def _display_downloads(df):
                     color='Count',
                     color_continuous_scale='Greens'
                 )
-                st.plotly_chart(fig_download_bar, use_container_width=True)
+                st.plotly_chart(fig_download_bar, width='stretch')
 
             # Detailed metrics for each download type
             st.subheader("Metrics by Download Type")
@@ -655,7 +655,7 @@ def _display_downloads(df):
                 })
 
             metrics_df = pd.DataFrame(download_type_metrics)
-            st.dataframe(metrics_df, use_container_width=True)
+            st.dataframe(metrics_df, width='stretch')
 
             # Downloads over time
             if 'timestamp' in downloads.columns:
@@ -676,7 +676,7 @@ def _display_downloads(df):
                     markers=True
                 )
                 fig_downloads_timeline.update_layout(height=400)
-                st.plotly_chart(fig_downloads_timeline, use_container_width=True)
+                st.plotly_chart(fig_downloads_timeline, width='stretch')
 
             # Specific metrics for each type
             st.subheader("Download Type Details")
@@ -704,7 +704,7 @@ def _display_downloads(df):
                             type_by_path = dtype_data['path'].value_counts().head(5)
                             if not type_by_path.empty:
                                 st.write(f"**Top pages for {dtype}:**")
-                                st.dataframe(type_by_path.reset_index().rename(columns={'index': 'Page', 'path': 'Downloads'}), use_container_width=True)
+                                st.dataframe(type_by_path.reset_index().rename(columns={'index': 'Page', 'path': 'Downloads'}), width='stretch')
         else:
             st.warning("No download_type field found in the data")
     else:
@@ -723,7 +723,7 @@ def _display_raw_data(df, weekly_summary, completion_rate):
 
     if data_view == "Parsed Data":
         st.subheader("Parsed Log Data")
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width='stretch')
 
         # Download button
         csv = df.to_csv(index=False)
@@ -736,7 +736,7 @@ def _display_raw_data(df, weekly_summary, completion_rate):
 
     elif data_view == "Weekly Summary":
         st.subheader("Weekly Page Visits Summary")
-        st.dataframe(weekly_summary, use_container_width=True)
+        st.dataframe(weekly_summary, width='stretch')
 
         csv = weekly_summary.to_csv(index=False)
         st.download_button(
@@ -748,7 +748,7 @@ def _display_raw_data(df, weekly_summary, completion_rate):
 
     elif data_view == "Completion Rate":
         st.subheader("Weekly Completion Rates")
-        st.dataframe(completion_rate, use_container_width=True)
+        st.dataframe(completion_rate, width='stretch')
 
         csv = completion_rate.to_csv(index=False)
         st.download_button(

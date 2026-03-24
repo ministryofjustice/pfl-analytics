@@ -22,8 +22,11 @@ def calculate_weekly_page_visits(df):
         # Convert timestamp to datetime
         page_visits['timestamp'] = pd.to_datetime(page_visits['timestamp'])
 
-        # Extract week
-        page_visits['week'] = page_visits['timestamp'].dt.to_period('W')
+        # Extract week (strip timezone first — to_period doesn't support tz-aware timestamps)
+        ts = page_visits['timestamp']
+        if hasattr(ts.dtype, 'tz') and ts.dtype.tz is not None:
+            ts = ts.dt.tz_localize(None)
+        page_visits['week'] = ts.dt.to_period('W')
 
         # Group by week and path, count occurrences
         weekly_summary = page_visits.groupby(['week', 'path']).size().reset_index(name='count')
