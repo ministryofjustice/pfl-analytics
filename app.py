@@ -74,7 +74,9 @@ if 'raw_df' not in st.session_state:
         try:
             _check_rate_limit()
             if active_config['source'] == 'file':
-                file_path = input_dir / active_config['selected_file']
+                file_path = (input_dir / active_config['selected_file']).resolve()
+                if not file_path.is_relative_to(input_dir.resolve()):
+                    raise ValueError("Invalid file path.")
                 validate_file(file_path)
                 df_raw = pd.read_csv(file_path) if str(file_path).endswith('.csv') else pd.read_excel(file_path)
                 if df_raw.empty or df_raw.shape[1] < 1:
