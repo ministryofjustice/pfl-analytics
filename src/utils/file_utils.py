@@ -1,8 +1,14 @@
 """File handling utilities."""
+import hashlib
 import logging
 import pandas as pd
+import defusedxml
 from io import BytesIO
 from pathlib import Path
+
+# Patch stdlib XML parsers to block XML bomb / XXE attacks before openpyxl
+# loads any Excel file.
+defusedxml.defuse_stdlib()
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +71,13 @@ def validate_file(file_path) -> None:
         else:
             logger.warning("File %s rejected: not valid text content", path)
             raise ValueError("CSV file does not appear to contain valid text data.")
+
+    # --- SHA-256 hash for audit trail ---
+    sha256 = hashlib.sha256()
+    with open(path, 'rb') as fh:
+        for chunk in iter(lambda: fh.read(65536), b''):
+            sha256.update(chunk)
+    logger.info("File accepted: %s | size=%d bytes | sha256=%s", path.name, size, sha256.hexdigest())
 
 
 def create_excel_download(dataframes_dict):
