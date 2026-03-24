@@ -1,6 +1,11 @@
 """Constants used in data processing."""
 
-# Page order for the user journey
+EXCLUDED_PATHS = [
+    '/assets', '/images', '/js', '/fonts', '/css',
+    '/.git', '/.env', '/.well-known',
+    '/apple-touch-icon', '/apple-touch-precomposed', '/rebrand',
+]
+
 PAGE_ORDER = [
     '/',
     '/safety-check',
@@ -16,7 +21,6 @@ PAGE_ORDER = [
     '/confirmation'
 ]
 
-# Page display names for visualizations
 PAGE_NAMES = {
     '/': 'Home',
     '/safety-check': 'Safety Check',
@@ -32,7 +36,6 @@ PAGE_NAMES = {
     '/confirmation': 'Confirmation'
 }
 
-# Page order for the CS user journey
 PAGE_ORDER_CS = [
     '/',
     '/domestic-abuse',
@@ -47,7 +50,6 @@ PAGE_ORDER_CS = [
     '/parenting-plan'
 ]
 
-# Page display names for CS visualizations
 PAGE_NAMES_CS = {
     '/': 'Home',
     '/domestic-abuse': 'Domestic Abuse',
