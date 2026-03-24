@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 from data_processing import process_dataframe, fetch_services, parse_log_data  # noqa: E402
@@ -21,29 +20,20 @@ from components.tabs import display_all_tabs  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-# --- Rate limiting ---------------------------------------------------------
-_RATE_LIMIT_MAX = 20       # max loads per session within the window
-_RATE_LIMIT_WINDOW = 3600  # seconds (1 hour)
+_RATE_LIMIT_MAX = 20
+_RATE_LIMIT_WINDOW = 3600
 
 
 def _check_rate_limit() -> None:
-    """Enforce a per-session load rate limit.
-
-    Raises RuntimeError with a safe message when the limit is exceeded.
-    """
     now = datetime.now(timezone.utc).timestamp()
     history: list = st.session_state.setdefault('_load_timestamps', [])
-    # Discard entries outside the rolling window
     history[:] = [t for t in history if now - t < _RATE_LIMIT_WINDOW]
     if len(history) >= _RATE_LIMIT_MAX:
         log_event("rate_limit_hit", loads_in_window=len(history), window_seconds=_RATE_LIMIT_WINDOW)
-        raise RuntimeError(
-            "Too many requests. Please wait before loading more data."
-        )
+        raise RuntimeError("Too many requests. Please wait before loading more data.")
     history.append(now)
 
 
-# Page configuration
 st.set_page_config(
     page_title="Family Justice Analytics Dashboard",
     page_icon="📊",
@@ -55,10 +45,8 @@ st.title("📊 Family Justice Analytics Dashboard")
 input_dir = Path("input")
 input_dir.mkdir(exist_ok=True)
 
-# --- Step 1: data source selector (always rendered so sidebar stays visible) ---
 source_config = display_data_source_selector(input_dir)
 
-# When Load is clicked, clear any cached raw data and store the new config
 if source_config['load']:
     st.session_state.pop('raw_df', None)
     st.session_state.pop('raw_label', None)
@@ -70,7 +58,6 @@ if 'source_config' not in st.session_state:
 
 active_config = st.session_state['source_config']
 
-# --- Step 2: fetch / read raw DataFrame (cached so filter changes don't re-fetch) ---
 if 'raw_df' not in st.session_state:
     with st.spinner("Loading data..."):
         try:
@@ -104,7 +91,6 @@ if 'raw_df' not in st.session_state:
 
             st.session_state['raw_df'] = raw_df
         except (ValueError, RuntimeError) as e:
-            # Safe, user-facing validation / rate-limit messages
             st.error(str(e))
             st.stop()
         except Exception:
@@ -116,15 +102,10 @@ if 'raw_df' not in st.session_state:
 raw_df = st.session_state['raw_df']
 active_label = st.session_state.get('raw_label', '')
 
-# --- Step 3: service filter (only shown when multiple services are present) ---
 if 'service' in raw_df.columns and raw_df['service'].nunique() > 1:
     available_services = sorted(raw_df['service'].dropna().unique().tolist())
     st.sidebar.header("Filters")
-    selected_services = st.sidebar.multiselect(
-        "Services",
-        available_services,
-        default=available_services,
-    )
+    selected_services = st.sidebar.multiselect("Services", available_services, default=available_services)
     filtered_df = raw_df[raw_df['service'].isin(selected_services)] if selected_services else raw_df
 else:
     filtered_df = raw_df
@@ -133,7 +114,6 @@ if filtered_df.empty:
     st.warning("No data for the selected services.")
     st.stop()
 
-# --- Step 4: process filtered data ---
 data = process_dataframe(filtered_df)
 st.success(f"✅ {len(data['parsed_data'])} records loaded")
 
@@ -145,18 +125,14 @@ page_visits = data['page_visits']
 per_page_completion = data['per_page_completion']
 funnel_data = data['funnel_data']
 
-# Display key metrics
 display_key_metrics(df, page_visits, completion_rate, completion_rate_cs)
 
-# Download section in sidebar
 display_download_section(
     df, weekly_summary, completion_rate, page_visits,
     per_page_completion, funnel_data, active_label, create_excel_download
 )
 
-# Display all tabs
 display_all_tabs(df, weekly_summary, completion_rate, page_visits, per_page_completion, funnel_data, completion_rate_cs)
 
-# Footer
 st.divider()
 st.caption(f"📁 Source: {active_label} | 📊 Dashboard generated with Streamlit")

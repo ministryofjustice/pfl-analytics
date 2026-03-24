@@ -3,31 +3,22 @@ import streamlit as st
 
 
 def display_key_metrics(df, page_visits, completion_rate, completion_rate_cs=None):
-    """Display key metrics section."""
     st.header("📈 Key Metrics")
 
-    # First row - general metrics
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric("Total Records", f"{len(df):,}")
 
     with col2:
-        unique_users = df['user_id'].nunique()
-        st.metric("Unique Users", f"{unique_users:,}")
+        st.metric("Unique Users", f"{df['user_id'].nunique():,}")
 
     with col3:
         if not page_visits.empty:
-            # Count total page visits (before deduplication)
             total_visits = len(page_visits)
-            # Count unique user-page combinations (after deduplication)
             unique_visits = page_visits.drop_duplicates(subset=['user_id', 'path']).shape[0]
-            st.metric(
-                "Total Page Visits",
-                f"{total_visits:,}",
-                delta=f"{unique_visits:,} unique",
-                help="Total page visit events (delta shows unique user-page combinations after deduplication)"
-            )
+            st.metric("Total Page Visits", f"{total_visits:,}", delta=f"{unique_visits:,} unique",
+                      help="Total page visit events (delta shows unique user-page combinations after deduplication)")
         else:
             st.metric("Total Page Visits", "0")
 
@@ -36,7 +27,6 @@ def display_key_metrics(df, page_visits, completion_rate, completion_rate_cs=Non
             avg_completion = completion_rate['user_completion_rate'].mean()
             st.metric("Avg Completion Rate (CAP)", f"{avg_completion:.1f}%")
         elif completion_rate_cs:
-            # Average the user completion rate across all CS journeys
             rates = [
                 df[f'{step}_user_completion_rate'].mean()
                 for step, df in completion_rate_cs.items()
@@ -47,23 +37,18 @@ def display_key_metrics(df, page_visits, completion_rate, completion_rate_cs=Non
         else:
             st.metric("Avg Completion Rate", "N/A")
 
-    # Second row - event type metrics
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        link_clicks_count = len(df[df['event_type'] == 'link_click'])
-        st.metric("Total Link Clicks", f"{link_clicks_count:,}")
+        st.metric("Total Link Clicks", f"{len(df[df['event_type'] == 'link_click']):,}")
 
     with col2:
-        page_exits_count = len(df[df['event_type'] == 'page_exit'])
-        st.metric("Total Page Exits", f"{page_exits_count:,}")
+        st.metric("Total Page Exits", f"{len(df[df['event_type'] == 'page_exit']):,}")
 
     with col3:
-        quick_exits_count = len(df[df['event_type'] == 'quick_exit'])
-        st.metric("Total Quick Exits", f"{quick_exits_count:,}")
+        st.metric("Total Quick Exits", f"{len(df[df['event_type'] == 'quick_exit']):,}")
 
     with col4:
-        downloads_count = len(df[df['event_type'] == 'download'])
-        st.metric("Total Downloads", f"{downloads_count:,}")
+        st.metric("Total Downloads", f"{len(df[df['event_type'] == 'download']):,}")
 
     st.divider()

@@ -10,10 +10,8 @@ import streamlit as st
 
 audit_logger = logging.getLogger("audit")
 
-# Random secret generated once per process — makes session IDs non-reversible
 _SALT = os.urandom(32)
 
-# Configure handler once at import time — idempotent if already set up
 if not audit_logger.handlers:
     _handler = logging.StreamHandler(sys.stdout)
     _handler.setFormatter(logging.Formatter("%(message)s"))
