@@ -8,6 +8,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from config import SERVICES
 
+# Feature flag: set ALLOW_FILE_UPLOAD=true in your local environment to enable
+# the file source option. Leave it unset (or set to anything else) in production
+# so only OpenSearch is available.
+ALLOW_FILE_UPLOAD = os.environ.get("ALLOW_FILE_UPLOAD", "").lower() == "true"
+
 
 def display_data_source_selector(input_dir):
     """Display data source selector (File or OpenSearch) and return selection details.
@@ -21,11 +26,14 @@ def display_data_source_selector(input_dir):
     """
     st.sidebar.header("Data Source")
 
-    source = st.sidebar.radio(
-        "Source",
-        options=['File', 'OpenSearch'],
-        label_visibility='collapsed'
-    )
+    if ALLOW_FILE_UPLOAD:
+        source = st.sidebar.radio(
+            "Source",
+            options=['File', 'OpenSearch'],
+            label_visibility='collapsed'
+        )
+    else:
+        source = 'OpenSearch'
 
     if source == 'File':
         available_files = [

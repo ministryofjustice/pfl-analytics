@@ -1,17 +1,45 @@
 """Main application entry point for CAP Analytics Dashboard."""
+import logging
 import streamlit as st
 import pandas as pd
+from datetime import datetime, timezone
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from data_processing import process_dataframe, fetch_services, parse_log_data
-from utils.file_utils import create_excel_download
-from components.sidebar import display_data_source_selector, display_download_section
-from components.metrics_display import display_key_metrics
-from components.tabs import display_all_tabs
+from data_processing import process_dataframe, fetch_services, parse_log_data  # noqa: E402
+from utils.file_utils import create_excel_download, validate_file  # noqa: E402
+from components.sidebar import display_data_source_selector, display_download_section  # noqa: E402
+from components.metrics_display import display_key_metrics  # noqa: E402
+from components.tabs import display_all_tabs  # noqa: E402
+
+logger = logging.getLogger(__name__)
+
+# --- Rate limiting ---------------------------------------------------------
+_RATE_LIMIT_MAX = 20       # max loads per session within the window
+_RATE_LIMIT_WINDOW = 3600  # seconds (1 hour)
+
+
+def _check_rate_limit() -> None:
+    """Enforce a per-session load rate limit.
+
+    Raises RuntimeError with a safe message when the limit is exceeded.
+    """
+    now = datetime.now(timezone.utc).timestamp()
+    history: list = st.session_state.setdefault('_load_timestamps', [])
+    # Discard entries outside the rolling window
+    history[:] = [t for t in history if now - t < _RATE_LIMIT_WINDOW]
+    if len(history) >= _RATE_LIMIT_MAX:
+        raise RuntimeError(
+            "Too many requests. Please wait before loading more data."
+        )
+    history.append(now)
+
 
 # Page configuration
 st.set_page_config(
@@ -44,8 +72,10 @@ active_config = st.session_state['source_config']
 if 'raw_df' not in st.session_state:
     with st.spinner("Loading data..."):
         try:
+            _check_rate_limit()
             if active_config['source'] == 'file':
                 file_path = input_dir / active_config['selected_file']
+                validate_file(file_path)
                 df_raw = pd.read_csv(file_path) if str(file_path).endswith('.csv') else pd.read_excel(file_path)
                 raw_df = parse_log_data(df_raw)
                 raw_df['service'] = active_config['service_name']
@@ -61,8 +91,13 @@ if 'raw_df' not in st.session_state:
                 st.session_state['raw_label'] = ', '.join(s['name'] for s in services)
 
             st.session_state['raw_df'] = raw_df
-        except Exception as e:
-            st.error(f"Error loading data: {e}")
+        except (ValueError, RuntimeError) as e:
+            # Safe, user-facing validation / rate-limit messages
+            st.error(str(e))
+            st.stop()
+        except Exception:
+            logger.exception("Unexpected error while loading data")
+            st.error("An unexpected error occurred while loading the data. Please try again or contact support.")
             st.stop()
 
 raw_df = st.session_state['raw_df']
