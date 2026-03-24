@@ -6,6 +6,8 @@ import defusedxml
 from io import BytesIO
 from pathlib import Path
 
+from utils.audit_log import log_event
+
 # Patch stdlib XML parsers to block XML bomb / XXE attacks before openpyxl
 # loads any Excel file.
 defusedxml.defuse_stdlib()
@@ -39,9 +41,11 @@ def validate_file(file_path) -> None:
         raise ValueError("The selected file could not be read.") from exc
 
     if size == 0:
+        log_event("file_rejected", filename=path.name, reason="empty_file")
         raise ValueError("The selected file is empty.")
     if size > MAX_FILE_SIZE_BYTES:
         logger.warning("File %s rejected: size %d bytes exceeds limit", path, size)
+        log_event("file_rejected", filename=path.name, reason="exceeds_size_limit", size_bytes=size)
         raise ValueError("File exceeds the maximum allowed size of 100 MB.")
 
     # --- magic-byte / content-type check ---
@@ -59,6 +63,8 @@ def validate_file(file_path) -> None:
                 "File %s has extension .%s but unexpected magic bytes %s",
                 path, suffix, header[:4].hex()
             )
+            log_event("file_rejected", filename=path.name, reason="magic_byte_mismatch",
+                      extension=suffix, magic_bytes=header[:4].hex())
             raise ValueError("File content does not match its declared type.")
     elif suffix == 'csv':
         # CSV must be decodable as UTF-8 or Latin-1 text
@@ -70,6 +76,7 @@ def validate_file(file_path) -> None:
                 continue
         else:
             logger.warning("File %s rejected: not valid text content", path)
+            log_event("file_rejected", filename=path.name, reason="invalid_text_encoding")
             raise ValueError("CSV file does not appear to contain valid text data.")
 
     # --- SHA-256 hash for audit trail ---
@@ -77,7 +84,9 @@ def validate_file(file_path) -> None:
     with open(path, 'rb') as fh:
         for chunk in iter(lambda: fh.read(65536), b''):
             sha256.update(chunk)
-    logger.info("File accepted: %s | size=%d bytes | sha256=%s", path.name, size, sha256.hexdigest())
+    digest = sha256.hexdigest()
+    logger.info("File accepted: %s | size=%d bytes | sha256=%s", path.name, size, digest)
+    log_event("file_accepted", filename=path.name, size_bytes=size, sha256=digest)
 
 
 def create_excel_download(dataframes_dict):

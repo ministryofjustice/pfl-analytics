@@ -2,6 +2,8 @@
 import requests
 import pandas as pd
 
+from utils.audit_log import log_event
+
 
 EXCLUDED_PATHS = [
     '/assets', '/images', '/js', '/fonts', '/css',
@@ -21,6 +23,9 @@ def fetch_all_events(proxy_url, index='cap-analytics', start_date=None, end_date
         service_name: Label added to every row as the 'service' column (e.g. 'CAP')
     """
     proxy_url = proxy_url.rstrip('/')
+
+    log_event("opensearch_query", index=index, service=service_name,
+              date_from=str(start_date), date_to=str(end_date))
 
     if start_date or end_date:
         date_range = {}
@@ -58,6 +63,7 @@ def fetch_all_events(proxy_url, index='cap-analytics', start_date=None, end_date
         scroll_id = scroll_result.get('_scroll_id')
         all_docs.extend(hit['_source'] for hit in hits)
 
+    log_event("opensearch_result", index=index, service=service_name, docs_fetched=len(all_docs))
     return _docs_to_dataframe(all_docs, service_name=service_name)
 
 

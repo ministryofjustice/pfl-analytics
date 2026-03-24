@@ -7,6 +7,11 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from config import SERVICES
+from utils.audit_log import log_event
+
+
+def _log_download(dataset: str, fmt: str, rows: int) -> None:
+    log_event("data_exported", dataset=dataset, format=fmt, rows=rows)
 
 # Feature flag: set ALLOW_FILE_UPLOAD=true in your local environment to enable
 # the file source option. Leave it unset (or set to anything else) in production
@@ -135,7 +140,9 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
         data=csv_parsed,
         file_name=f"parsed_data_{selected_file.split('.')[0]}.csv",
         mime="text/csv",
-        use_container_width=True
+        width='stretch',
+        on_click=_log_download,
+        args=("parsed_data", "csv", len(df)),
     )
 
     # Weekly Summary CSV
@@ -146,7 +153,9 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
             data=csv_weekly,
             file_name=f"weekly_summary_{selected_file.split('.')[0]}.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch',
+            on_click=_log_download,
+            args=("weekly_summary", "csv", len(weekly_summary)),
         )
 
     # Completion Rate CSV
@@ -157,7 +166,9 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
             data=csv_completion,
             file_name=f"completion_rate_{selected_file.split('.')[0]}.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch',
+            on_click=_log_download,
+            args=("completion_rate", "csv", len(completion_rate)),
         )
 
     # Page Visits CSV
@@ -168,7 +179,9 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
             data=csv_visits,
             file_name=f"page_visits_{selected_file.split('.')[0]}.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch',
+            on_click=_log_download,
+            args=("page_visits", "csv", len(page_visits)),
         )
 
     # Download all data as Excel
@@ -202,6 +215,8 @@ def display_download_section(df, weekly_summary, completion_rate, page_visits, p
         data=excel_file,
         file_name=f"cap_analytics_all_data_{selected_file.split('.')[0]}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True,
-        help="Downloads all data including event types (Link Clicks, Page Exits, Quick Exits, Downloads) in a single Excel file with multiple sheets"
+        width='stretch',
+        help="Downloads all data including event types (Link Clicks, Page Exits, Quick Exits, Downloads) in a single Excel file with multiple sheets",
+        on_click=_log_download,
+        args=("all_data", "xlsx", len(df)),
     )
