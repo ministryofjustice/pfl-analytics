@@ -1,0 +1,54 @@
+# Security composition analysis for dependencies and Docker images
+# Scans for vulnerabilities, uploads SARIF results to GitHub Security tab
+# Trigger: schedule (daily), pull_request, push, workflow_dispatch | Permissions: contents:write, security-events:write
+
+name: SCA ⚡️
+run-name: Software Composition Analysis ⚡️
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+  pull_request:
+    branches: ["main", "develop", "release/*"]
+    types: [opened, synchronize, reopened]
+
+  workflow_dispatch:
+  branch_protection_rule:
+
+permissions: {}
+
+
+
+jobs:
+  sca:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      security-events: write
+      actions: read
+
+    name: Execute ⚙️
+    runs-on: ["ubuntu-latest"]
+    timeout-minutes: 45
+
+    steps:
+      - name: Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Install
+        shell: bash
+        run: npm ci --ignore-scripts
+
+      - name: ⚡️ SCA
+        uses: ministryofjustice/devsecops-actions/sca@5eb2a5ac8cc28b5d33e7c36c6963b44db5f78118 # v1.3.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          dependency-review-config-file: "./.github/dependency-review-config.yml"
+          dependency-check-suppression-file: "dependency-check-suppression.xml"
