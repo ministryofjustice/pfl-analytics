@@ -2,12 +2,16 @@
 import hashlib
 import json
 import logging
+import os
 import sys
 import time
 
 import streamlit as st
 
 audit_logger = logging.getLogger("audit")
+
+# Random secret generated once per process — makes session IDs non-reversible
+_SALT = os.urandom(32)
 
 # Configure handler once at import time — idempotent if already set up
 if not audit_logger.handlers:
@@ -20,8 +24,8 @@ if not audit_logger.handlers:
 
 def _session_id() -> str:
     """Stable, anonymous per-session identifier (not reversible to user identity)."""
-    raw = str(id(st.session_state))
-    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+    raw = str(id(st.session_state)).encode()
+    return hashlib.sha256(_SALT + raw).hexdigest()[:16]
 
 
 def log_event(event_type: str, **kwargs) -> None:
