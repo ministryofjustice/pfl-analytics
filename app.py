@@ -77,6 +77,8 @@ if 'raw_df' not in st.session_state:
                 file_path = input_dir / active_config['selected_file']
                 validate_file(file_path)
                 df_raw = pd.read_csv(file_path) if str(file_path).endswith('.csv') else pd.read_excel(file_path)
+                if df_raw.empty or df_raw.shape[1] < 1:
+                    raise ValueError("The file appears to be empty or has no readable columns.")
                 raw_df = parse_log_data(df_raw)
                 raw_df['service'] = active_config['service_name']
                 st.session_state['raw_label'] = active_config['selected_file']
