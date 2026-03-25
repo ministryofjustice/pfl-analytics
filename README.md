@@ -9,8 +9,8 @@ A Streamlit-based analytics dashboard for analyzing Care Arrangement Plan user b
 ```
 care-arrangement-plan-analytics/
 ├── app.py                          # ⭐ Main application entry point
-├── data_processor.py               # Legacy data processor (deprecated)
 ├── main.py                         # CLI batch processing script
+├── config.py                       # Service configuration
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
 │
@@ -29,22 +29,32 @@ care-arrangement-plan-analytics/
     │
     ├── components/                 # 🎨 UI Components
     │   ├── __init__.py
-    │   ├── metrics_display.py      # Key metrics visualization
-    │   ├── sidebar.py              # File selector, filters, downloads
-    │   └── tabs/                   # Dashboard tabs
+    │   ├── metrics_display.py      # Key metrics cards
+    │   ├── sidebar.py              # Data source selector, filters, downloads
+    │   └── tabs/                   # Dashboard tabs (one file per tab)
     │       ├── __init__.py
-    │       └── all_tabs.py         # All dashboard tab components
+    │       ├── all_tabs.py         # Tab orchestrator
+    │       ├── weekly_overview.py
+    │       ├── page_visits.py
+    │       ├── completion_rates.py
+    │       ├── link_clicks.py
+    │       ├── page_exits.py
+    │       ├── quick_exits.py
+    │       ├── downloads.py
+    │       └── raw_data.py
     │
     ├── data_processing/            # 📊 Data Processing Logic
     │   ├── __init__.py
-    │   ├── constants.py            # Page order, display names
+    │   ├── constants.py            # Page order, display names, excluded paths
     │   ├── parser.py               # Log parsing & cleaning
     │   ├── metrics.py              # Metrics calculations
-    │   └── processor.py            # Main orchestration
+    │   ├── processor.py            # Pipeline orchestration
+    │   └── opensearch_client.py    # OpenSearch API client
     │
     └── utils/                      # 🔧 Utility Functions
         ├── __init__.py
-        └── file_utils.py           # Excel/CSV file handling
+        ├── file_utils.py           # File validation & Excel generation
+        └── audit_log.py            # Structured audit logging
 ```
 
 ### Key Files Explained
@@ -63,8 +73,8 @@ care-arrangement-plan-analytics/
 
 #### UI Components (`src/components/`)
 - **`metrics_display.py`** - Renders key metrics cards
-- **`sidebar.py`** - File selection, date filters, download buttons
-- **`tabs/all_tabs.py`** - All dashboard tab components (Weekly Overview, Page Visits, Completion Rates, Link Clicks, Page Exits, Quick Exits, Downloads, Raw Data)
+- **`sidebar.py`** - Data source selector, date filters, download buttons
+- **`tabs/`** - One module per tab: Weekly Overview, Page Visits, Completion Rates, Link Clicks, Page Exits, Quick Exits, Downloads, Raw Data
 
 #### Tests (`tests/`)
 - **`test_data_processor.py`** - Unit tests for deduplication and metrics
