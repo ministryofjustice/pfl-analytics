@@ -16,8 +16,6 @@ jobs:
     uses: ./.github/workflows/validation.yml
     secrets: inherit
 
-  # TODO: Remove 'if: false' once the namespace PR has merged and ECR/KUBE secrets
-  # are provisioned into the 'development' GitHub environment by Cloud Platform.
   image:
     name: 'Build & Push Image'
     if: false
@@ -25,10 +23,6 @@ jobs:
     uses: ./.github/workflows/build-push-image.yml
     secrets: inherit
 
-  # TODO: Remove 'if: false' once:
-  #   1. Namespace PR merged (provisions KUBE_CERT, KUBE_TOKEN, KUBE_CLUSTER, KUBE_NAMESPACE)
-  #   2. Auth layer resolved (see docs/spikes/auth-layer-spike.md) and OAUTH2_* secrets added
-  #   3. CAP_OPENSEARCH_URL secret added (internal cluster URL to OpenSearch proxy)
   deploy_dev:
     name: 'Deploy to Development'
     if: false

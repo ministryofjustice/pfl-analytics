@@ -2,26 +2,24 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: analytics-ingress
-  namespace: care-arrangement-plan-analytics-dev
+  namespace: pfl-analytics-dev
   annotations:
-    external-dns.alpha.kubernetes.io/set-identifier: analytics-ingress-care-arrangement-plan-analytics-dev-green
+    external-dns.alpha.kubernetes.io/set-identifier: analytics-ingress-pfl-analytics-dev-green
     external-dns.alpha.kubernetes.io/aws-weight: '100'
     nginx.ingress.kubernetes.io/enable-modsecurity: 'true'
     nginx.ingress.kubernetes.io/modsecurity-snippet: |
       SecAuditEngine On
       SecRuleEngine On
-      SecDefaultAction "phase:2,pass,log,tag:github_team=central-digital-product-team,tag:namespace=care-arrangement-plan-analytics-dev"
+      SecDefaultAction "phase:2,pass,log,tag:namespace=pfl-analytics-dev"
 spec:
   ingressClassName: modsec
   tls:
     - hosts:
-        - care-arrangement-plan-analytics-dev.apps.live.cloud-platform.service.justice.gov.uk
+        - pfl-analytics-dev.apps.live.cloud-platform.service.justice.gov.uk
   rules:
-    - host: care-arrangement-plan-analytics-dev.apps.live.cloud-platform.service.justice.gov.uk
+    - host: pfl-analytics-dev.apps.live.cloud-platform.service.justice.gov.uk
       http:
         paths:
-          # TODO: Route through auth proxy once auth layer is resolved
-          # See docs/spikes/auth-layer-spike.md
           - path: /
             pathType: Prefix
             backend:
