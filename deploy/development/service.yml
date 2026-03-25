@@ -2,10 +2,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: analytics-service
-  namespace: care-arrangement-plan-analytics-dev
+  namespace: pfl-analytics-dev
 spec:
   selector:
-    app: care-arrangement-plan-analytics-dev
+    app: pfl-analytics-dev
   ports:
     - port: 8501
       targetPort: 8501
