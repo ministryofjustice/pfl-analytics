@@ -21,17 +21,19 @@ spec:
         app: ${KUBE_NAMESPACE}
     spec:
       terminationGracePeriodSeconds: 35
-      serviceAccountName: cd-serviceaccount
       containers:
-        - name: analytics
+        - name: streamlit
           image: ${ECR_URL}:${IMAGE_TAG}
+          ports:
+            - containerPort: 8501
+              name: http
           resources:
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 1000m
+              memory: 1000Mi
             requests:
               cpu: 50m
-              memory: 256Mi
+              memory: 200Mi
           readinessProbe:
             httpGet:
               path: /_stcore/health
@@ -40,20 +42,95 @@ spec:
             httpGet:
               path: /_stcore/health
               port: 8501
-          ports:
-            - containerPort: 8501
-              name: http
           securityContext:
-            capabilities:
-              drop:
-                - ALL
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: ${KUBE_NAMESPACE}
+  labels:
+    app: oauth2-proxy
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      terminationGracePeriodSeconds: 35
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+          args:
+            - --provider=oidc
+            - --oidc-issuer-url=https://login.microsoftonline.com/$(ENTRA_TENANT_ID)/v2.0
+            - --upstream=http://${KUBE_NAMESPACE}-service:8501
+            - --http-address=0.0.0.0:4180
+            - --redirect-url=https://${APP_HOST}/oauth2/callback
+            - --email-domain=*
+            - --scope=openid email profile offline_access
+            - --cookie-secure=true
+            - --cookie-name=_pfl_analytics_oauth2
           env:
-            - name: CAP_OPENSEARCH_URL
+            - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: analytics-secrets
-                  key: cap-opensearch-url
+                  name: entra-oauth2-proxy
+                  key: client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: entra-oauth2-proxy
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: entra-oauth2-proxy
+                  key: cookie-secret
+            - name: ENTRA_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: entra-oauth2-proxy
+                  key: tenant-id
+          ports:
+            - containerPort: 4180
+              name: http
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL

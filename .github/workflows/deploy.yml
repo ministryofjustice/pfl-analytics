@@ -16,20 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
-      contents: read
+      contents: write
     env:
       KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
 
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 'Inject environment variables'
         env:
           TPL_PATH: 'deploy/${{ inputs.environment }}'
           ECR_URL: ${{ inputs.registry }}/${{ vars.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
-          CAP_OPENSEARCH_URL: ${{ secrets.CAP_OPENSEARCH_URL }}
+          APP_HOST: ${{ vars.APP_HOST }}
+          ENTRA_CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID }}
+          ENTRA_CLIENT_SECRET: ${{ secrets.ENTRA_CLIENT_SECRET }}
+          ENTRA_TENANT_ID: ${{ secrets.ENTRA_TENANT_ID }}
+          OAUTH2_PROXY_COOKIE_SECRET: ${{ secrets.OAUTH2_PROXY_COOKIE_SECRET }}
         run: |
           for file in "$TPL_PATH"/*.tpl.yml; do
             < "$file" envsubst > "${file%.tpl.yml}.yaml"
@@ -51,3 +55,8 @@ jobs:
       - name: 'Apply manifest files'
         run: |
           kubectl apply -f deploy/${{ inputs.environment }} -n ${KUBE_NAMESPACE}
+
+      - name: 'Wait for rollout'
+        run: |
+          kubectl rollout status deployment/pfl-analytics -n ${KUBE_NAMESPACE}
+          kubectl rollout status deployment/oauth2-proxy -n ${KUBE_NAMESPACE}

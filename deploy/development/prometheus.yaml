@@ -1,0 +1,91 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  namespace: pfl-analytics-dev
+  labels:
+    prometheus: prometheus-operator
+    role: alert-rules
+    release: prometheus-operator
+  name: monitoring-rules-pfl-analytics-dev
+spec:
+  groups:
+
+  - name: kubernetes-apps
+    rules:
+    - alert: KubePodCrashLooping
+      annotations:
+        message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
+        summary: Pod container is crash looping.
+      expr: |
+        rate(kube_pod_container_status_restarts_total{job="kube-state-metrics", namespace="pfl-analytics-dev"}[5m]) * 60 > 0
+      for: 5m
+      labels:
+        severity: pfl-analytics-dev
+
+    - alert: KubePodNotReady
+      annotations:
+        message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than 5 minutes.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready
+        summary: Pod is not in a Ready state.
+      expr: |
+        sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown", namespace="pfl-analytics-dev"})
+        > 0
+      for: 5m
+      labels:
+        severity: pfl-analytics-dev
+
+    - alert: KubeDeploymentGenerationMismatch
+      annotations:
+        message: Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment }} does not match (Deployment failed but not rolled back).
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentgenerationmismatch
+        summary: Deployment failed to update.
+      expr: |
+        kube_deployment_status_observed_generation{job="kube-state-metrics", namespace="pfl-analytics-dev"}
+        !=
+        kube_deployment_metadata_generation{job="kube-state-metrics", namespace="pfl-analytics-dev"}
+      for: 15m
+      labels:
+        severity: pfl-analytics-dev
+
+    - alert: KubeDeploymentReplicasMismatch
+      annotations:
+        message: |
+          Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for 10 minutes.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentreplicasmismatch
+        summary: Deployment has a replica mismatch.
+      expr: |
+        kube_deployment_spec_replicas{job="kube-state-metrics", namespace="pfl-analytics-dev"}
+        !=
+        kube_deployment_status_replicas_available{job="kube-state-metrics", namespace="pfl-analytics-dev"}
+      for: 10m
+      labels:
+        severity: pfl-analytics-dev
+
+  - name: application-rules
+    rules:
+    - alert: High5xxRate
+      annotations:
+        message: More than 5% of responses were 5xx errors in the last 3 minutes.
+        summary: High rate of application errors.
+      expr: |
+        sum by (ingress, cluster) (rate(nginx_ingress_controller_requests{exported_namespace="pfl-analytics-dev",status=~"5.."}[1m]))
+        /
+        sum by (ingress) (rate(nginx_ingress_controller_requests{exported_namespace="pfl-analytics-dev"}[1m]))
+        > 0.05
+      for: 3m
+      labels:
+        severity: pfl-analytics-dev
+
+    - alert: High4xxRate
+      annotations:
+        message: More than 5% of responses were 4xx errors (excluding 404) in the last 3 minutes.
+        summary: High rate of client errors (4xx).
+      expr: |
+        sum by (ingress, cluster) (rate(nginx_ingress_controller_requests{exported_namespace="pfl-analytics-dev",status=~"4[012356789].", status!="404"}[1m]))
+        /
+        sum by (ingress) (rate(nginx_ingress_controller_requests{exported_namespace="pfl-analytics-dev"}[1m]))
+        > 0.05
+      for: 3m
+      labels:
+        severity: pfl-analytics-dev
