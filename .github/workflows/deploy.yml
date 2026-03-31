@@ -58,5 +58,5 @@ jobs:
 
       - name: 'Wait for rollout'
         run: |
-          kubectl rollout status deployment/pfl-analytics -n ${KUBE_NAMESPACE}
+          kubectl rollout status deployment/${KUBE_NAMESPACE}-deployment -n ${KUBE_NAMESPACE}
           kubectl rollout status deployment/oauth2-proxy -n ${KUBE_NAMESPACE}

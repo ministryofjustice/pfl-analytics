@@ -255,3 +255,37 @@ When you're done working:
 ```bash
 deactivate
 ```
+
+---
+
+## Deployment (Cloud Platform)
+
+The dashboard is hosted on [Ministry of Justice Cloud Platform](https://user-guide.cloud-platform.service.justice.gov.uk) using Kubernetes. Authentication is handled by [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy) in front of Streamlit, using Microsoft Entra ID via the [IDAM team](https://user-guide.staff-identity.service.justice.gov.uk) as the identity provider.
+
+### Infrastructure overview
+
+Three repositories are involved:
+
+| Repo | Purpose |
+|---|---|
+| `pfl-analytics` (this repo) | App code, Docker image, Kubernetes manifests, CI/CD pipeline |
+| `cloud-platform-environments` | Kubernetes namespace definitions, ECR, service accounts |
+| `staff-identity-idam-entra-infra` | Azure Entra ID app registration (OAuth2 client) |
+
+### How authentication works
+
+```
+User → Ingress → oauth2-proxy → (if authenticated) → Streamlit
+                      ↕
+               Microsoft Entra ID
+               (MoJ External tenant)
+```
+
+oauth2-proxy intercepts all traffic. Unauthenticated users are redirected to Microsoft login. Only `justice.gov.uk` and `digital.justice.gov.uk` email addresses are permitted.
+
+### Deployment pipeline
+
+On every push to `main`:
+
+1. `build-push-image.yml` — builds the Docker image and pushes to ECR (prod namespace)
+2. `deploy.yml` — runs `envsubst` on `deploy/development/*.tpl.yml` to inject secrets/config, then applies manifests to the cluster
