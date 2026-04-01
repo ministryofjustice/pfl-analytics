@@ -11,6 +11,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate:
+    name: 'Validate'
+    uses: ./.github/workflows/validation.yml
+    secrets: inherit
+
   image:
     name: 'Build & Push Image'
     if: github.event.ref == 'refs/heads/main'
