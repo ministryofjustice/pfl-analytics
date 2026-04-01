@@ -104,6 +104,9 @@ def display_date_filter(page_visits):
 def display_download_section(df, weekly_summary, completion_rate, page_visits,
                              per_page_completion, funnel_data, selected_file, create_excel_download):
     """Display download buttons in sidebar."""
+    if os.getenv("LOCAL_DEV", "false").lower() != "true":
+        return
+
     st.sidebar.header("📥 Download Data")
     st.sidebar.subheader("CSV Downloads")
 

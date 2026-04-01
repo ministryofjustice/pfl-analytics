@@ -18,14 +18,13 @@ jobs:
 
   image:
     name: 'Build & Push Image'
-    if: false
-    needs: [validate]
+    if: github.event.ref == 'refs/heads/main'
     uses: ./.github/workflows/build-push-image.yml
     secrets: inherit
 
   deploy_dev:
     name: 'Deploy to Development'
-    if: false
+    if: github.event.ref == 'refs/heads/main'
     uses: ./.github/workflows/deploy.yml
     needs: [image]
     with:
