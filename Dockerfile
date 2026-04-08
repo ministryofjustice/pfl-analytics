@@ -15,7 +15,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create non-root user
-RUN useradd --create-home appuser
+# RUN useradd --create-home appuser
+RUN useradd --create-home --uid 1000 appuser
 
 # Copy project files
 COPY app.py .
@@ -24,6 +25,6 @@ COPY src/ ./src/
 
 RUN mkdir -p input output && chown -R appuser /app
 
-USER appuser
+USER 1000
 
 CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
