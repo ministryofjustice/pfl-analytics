@@ -55,8 +55,3 @@ jobs:
       - name: 'Apply manifest files'
         run: |
           kubectl apply -f deploy/${{ inputs.environment }} -n ${KUBE_NAMESPACE}
-
-      - name: 'Wait for rollout'
-        run: |
-          kubectl rollout status deployment/${KUBE_NAMESPACE}-deployment -n ${KUBE_NAMESPACE}
-          kubectl rollout status deployment/oauth2-proxy -n ${KUBE_NAMESPACE}
