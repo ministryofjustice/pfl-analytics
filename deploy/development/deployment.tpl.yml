@@ -91,6 +91,7 @@ spec:
             - --redirect-url=https://${APP_HOST}/oauth2/callback
             - --email-domain=justice.gov.uk
             - --email-domain=digital.justice.gov.uk
+            - --oidc-email-claim=preferred_username
             - --scope=openid email profile offline_access
             - --cookie-secure=true
             - --cookie-name=_pfl_analytics_oauth2
