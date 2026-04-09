@@ -51,17 +51,22 @@ def display_data_source_selector(input_dir):
         load = st.sidebar.button("Load Data", type="primary")
         return {'source': 'file', 'selected_file': selected_file, 'service_name': service_name, 'load': load}
 
-    st.sidebar.markdown("**Service connections**")
+    st.sidebar.markdown("**Services**")
     configured_services = []
     for svc in SERVICES:
-        default = os.environ.get(svc['url_env'], svc['default_url'])
-        url = st.sidebar.text_input(
-            svc['name'], value=default,
-            placeholder="http://... (leave blank to skip)",
-            help=f"kubectl port-forward -n {svc['namespace']} svc/<proxy-svc> 8080:8080"
-        )
-        if url.strip():
-            configured_services.append({'name': svc['name'], 'url': url.strip(), 'index': svc['index']})
+        url = os.environ.get(svc['url_env'], svc['default_url'])
+        if ALLOW_FILE_UPLOAD:
+            url = st.sidebar.text_input(
+                svc['name'], value=default,
+                placeholder="http://... (leave blank to skip)",
+                help=f"kubectl port-forward -n {svc['namespace']} svc/<proxy-svc> 8080:8080"
+            )
+            if url.strip():
+                configured_services.append({'name': svc['name'], 'url': url.strip(), 'index': svc['index']})
+        elif url.strip():
+            enabled = st.sidebar.toggle(svc['name'], value=True)
+            if enabled:
+                configured_services.append({'name': svc['name'], 'url': url.strip(), 'index': svc['index']})
 
     st.sidebar.markdown("**Date range** (optional)")
     col1, col2 = st.sidebar.columns(2)
