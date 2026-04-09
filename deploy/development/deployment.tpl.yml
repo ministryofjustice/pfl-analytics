@@ -95,6 +95,7 @@ spec:
             - --scope=openid email profile offline_access
             - --cookie-secure=true
             - --cookie-name=_pfl_analytics_oauth2
+            - --skip-provider-button=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
