@@ -57,7 +57,7 @@ def display_data_source_selector(input_dir):
         url = os.environ.get(svc['url_env'], svc['default_url'])
         if ALLOW_FILE_UPLOAD:
             url = st.sidebar.text_input(
-                svc['name'], value=default,
+                svc['name'], value=url,
                 placeholder="http://... (leave blank to skip)",
                 help=f"kubectl port-forward -n {svc['namespace']} svc/<proxy-svc> 8080:8080"
             )
