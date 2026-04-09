@@ -27,8 +27,28 @@ jobs:
     name: 'Deploy to Development'
     if: github.event.ref == 'refs/heads/main'
     uses: ./.github/workflows/deploy.yml
-    needs: [image]
+    needs: [image, validate]
     with:
       environment: development
+      registry: ${{ needs.image.outputs.registry }}
+    secrets: inherit
+  
+  deploy_staging:
+    name: 'Deploy to Staging'
+    if: github.event.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy.yml
+    needs: [image, validate, deploy_dev]
+    with:
+      environment: staging
+      registry: ${{ needs.image.outputs.registry }}
+    secrets: inherit
+
+  deploy_production:
+    name: 'Deploy to Production'
+    if: github.event.ref == 'refs/heads/main'
+    needs: [image, validate, deploy_dev, deploy_staging]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
       registry: ${{ needs.image.outputs.registry }}
     secrets: inherit
