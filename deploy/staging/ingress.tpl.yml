@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${KUBE_NAMESPACE}-ingress
+  namespace: ${KUBE_NAMESPACE}
+  annotations:
+    external-dns.alpha.kubernetes.io/set-identifier: ${KUBE_NAMESPACE}-ingress-${KUBE_NAMESPACE}-green
+    external-dns.alpha.kubernetes.io/aws-weight: '100'
+    nginx.ingress.kubernetes.io/enable-modsecurity: 'true'
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      SecAuditEngine On
+      SecRuleEngine On
+      SecDefaultAction "phase:2,pass,log,tag:github_team=central-digital-product-team,tag:namespace=${KUBE_NAMESPACE}"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location = /.well-known/security.txt {
+        auth_basic off;
+        return 301 https://raw.githubusercontent.com/ministryofjustice/security-guidance/main/contact/vulnerability-disclosure-security.txt;
+      }
+spec:
+  ingressClassName: modsec
+  tls:
+    - hosts:
+        - ${APP_HOST}
+  rules:
+    - host: ${APP_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy-service
+                port:
+                  number: 4180
