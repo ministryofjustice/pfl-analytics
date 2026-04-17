@@ -6,7 +6,7 @@ from utils.audit_log import log_event
 from .constants import EXCLUDED_PATHS
 
 
-def fetch_all_events(proxy_url, index='cap-analytics', start_date=None, end_date=None, service_name=None):
+def fetch_all_events(proxy_url, index='cap-analytics*', start_date=None, end_date=None, service_name=None):
     """Fetch all events from OpenSearch and return as DataFrame."""
     proxy_url = proxy_url.rstrip('/')
 

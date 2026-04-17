@@ -10,14 +10,14 @@ SERVICES = [
         'name': 'CAP',
         'url_env': 'CAP_OPENSEARCH_URL',
         'default_url': os.environ.get('OPENSEARCH_PROXY_URL', 'http://localhost:8080'),
-        'index': 'cap-analytics',
+        'index': 'cap-analytics*',
         'namespace': 'care-arrangement-plan-dev',
     },
     {
         'name': 'Connecting Services',
         'url_env': 'CS_OPENSEARCH_URL',
         'default_url': '',
-        'index': 'cs-analytics',
+        'index': 'cs-analytics*',
         'namespace': 'pfl-connecting-services-dev',
     },
 ]
