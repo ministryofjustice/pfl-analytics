@@ -43,7 +43,7 @@ jobs:
           node-version: ${{ vars.NODE_VERSION }}
 
       - name: ⚡️ SCA
-        uses: ministryofjustice/devsecops-actions/sca@07d5768889c79128d82c07c00418df3ef66b4453 # v1.3.0
+        uses: ministryofjustice/devsecops-actions/sca@de77b9dc1173a1de48ed8e0b66e270f5e9c91647 # v1.3.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           dependency-review-config-file: "./.github/dependency-review-config.yml"
