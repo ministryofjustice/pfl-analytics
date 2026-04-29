@@ -93,7 +93,7 @@ def getServices():
     elif env == "staging":
         return [svc for svc in SERVICES if svc['namespace'].endswith('-staging')]
     else:
-        return [svc for svc in SERVICES if svc['namespace'].endswith('dev')]
+        return [svc for svc in SERVICES if svc['namespace'].endswith('-prod')]
 
 def display_date_filter(page_visits):
     """Display date range filter and return filtered page_visits."""
