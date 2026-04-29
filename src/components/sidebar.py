@@ -28,6 +28,8 @@ def display_data_source_selector(input_dir):
     """
     st.sidebar.header("Data Source")
 
+    services = getServices()
+
     if ALLOW_FILE_UPLOAD:
         source = st.sidebar.radio("Source", options=['File', 'OpenSearch'], label_visibility='collapsed')
     else:
@@ -46,14 +48,14 @@ def display_data_source_selector(input_dir):
 
         selected_file = st.sidebar.selectbox("Select a data file", available_files,
                                              help="Choose a log file to analyse")
-        service_name = st.sidebar.radio("Service", options=[svc['name'] for svc in SERVICES],
+        service_name = st.sidebar.radio("Service", options=[svc['name'] for svc in services],
                                         help="Which service does this log file belong to?")
         load = st.sidebar.button("Load Data", type="primary")
         return {'source': 'file', 'selected_file': selected_file, 'service_name': service_name, 'load': load}
 
     st.sidebar.markdown("**Services**")
     configured_services = []
-    for svc in SERVICES:
+    for svc in services:
         url = os.environ.get(svc['url_env'], svc['default_url'])
         if ALLOW_FILE_UPLOAD:
             url = st.sidebar.text_input(
@@ -83,6 +85,15 @@ def display_data_source_selector(input_dir):
         'load': load,
     }
 
+def getServices():
+    env = os.getenv("APP_ENV", "development")
+
+    if env == "development":
+        return [svc for svc in SERVICES if svc['namespace'].endswith('-dev')]
+    elif env == "staging":
+        return [svc for svc in SERVICES if svc['namespace'].endswith('-staging')]
+    else:
+        return [svc for svc in SERVICES if svc['namespace'].endswith('-prod')]
 
 def display_date_filter(page_visits):
     """Display date range filter and return filtered page_visits."""

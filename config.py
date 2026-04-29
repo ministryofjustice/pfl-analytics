@@ -18,7 +18,7 @@ SERVICES = [
         'url_env': 'CS_OPENSEARCH_URL',
         'default_url': '',
         'index': 'cs-analytics*',
-        'namespace': 'pfl-connecting-services-dev',
+        'namespace': 'connecting-services-dev',
     },
     {
         'name': 'CAP',
@@ -32,6 +32,20 @@ SERVICES = [
         'url_env': 'CS_OPENSEARCH_URL',
         'default_url': '',
         'index': 'cs-analytics*',
-        'namespace': 'pfl-connecting-services-staging',
+        'namespace': 'connecting-services-staging',
     },
+    {
+        'name': 'CAP',
+        'url_env': 'CAP_OPENSEARCH_URL',
+        'default_url': os.environ.get('OPENSEARCH_PROXY_URL', 'http://localhost:8080'),
+        'index': 'cap-analytics*',
+        'namespace': 'care-arrangement-plan-prod',
+    },
+    {
+        'name': 'Connecting Services',
+        'url_env': 'CS_OPENSEARCH_URL',
+        'default_url': '',
+        'index': 'cs-analytics*',
+        'namespace': 'connecting-services-prod',
+    }
 ]
